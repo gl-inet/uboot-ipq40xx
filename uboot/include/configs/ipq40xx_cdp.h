@@ -266,7 +266,8 @@ typedef struct {
 #define CONFIG_QCA8033_PHY	1
 #define CONFIG_MII
 #define CONFIG_CMD_MII
-#define CONFIG_IPADDR	192.168.1.11
+#define CONFIG_IPADDR	192.168.1.1
+#define CONFIG_SERVERIP 192.168.1.2
 #define CONFIG_IPQ_NO_MACS	2
 /*
  * CRASH DUMP ENABLE
@@ -310,5 +311,26 @@ typedef struct {
 #define CONFIG_BOOTCOMMAND	"bootipq"
 #define CONFIG_BOOTDELAY	2
 #define CONFIG_IPQ_FDT_HIGH	0x87000000
+
+#define CONFIG_UBOOT_START 			0xf0000
+#define CONFIG_UBOOT_SIZE 			0x80000 
+#define CONFIG_ART_START 			0x170000
+#define CONFIG_ART_SIZE 			0x10000
+#define CONFIG_FIRMWARE_START		0x180000
+#define CONFIG_FIRMWARE_SIZE		0x1E80000
+
+#define CONFIG_LOADADDR 0x84000000
+#define CONFIG_UBOOT_NAME "openwrt-ipq40xx-u-boot-stripped.elf"
+#define CONFIG_FW_NAME "firmware.bin"
+
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	"loadaddr="MK_STR(CONFIG_LOADADDR)"\0" \
+	"uboot_name="CONFIG_UBOOT_NAME"\0" \
+	"fw_name="CONFIG_FW_NAME"\0" \
+	"lu=if ping $serverip; then tftpboot $loadaddr $uboot_name; sf probe && sf erase "MK_STR(CONFIG_UBOOT_START)" "MK_STR(CONFIG_UBOOT_SIZE)" && sf write $loadaddr "MK_STR(CONFIG_UBOOT_START)" $filesize; fi\0" \
+	"lf=if ping $serverip; then tftpboot $loadaddr $fw_name; sf probe && sf erase "MK_STR(CONFIG_FIRMWARE_START)" "MK_STR(CONFIG_FIRMWARE_SIZE)" && sf write $loadaddr "MK_STR(CONFIG_FIRMWARE_START)" $filesize; fi\0" \
+	"lfq=if ping $serverip; then tftpboot $loadaddr $fw_name; imgaddr=$loadaddr && source $imgaddr:script; fi\0"
+	
+
 
 #endif /* _IPQCDP_H */
