@@ -15,6 +15,7 @@ all: ipq40xx
 ipq40xx:	export UBOOT_FILE_NAME=uboot-ipq40xx
 ipq40xx:	export MAX_UBOOT_SIZE=512
 ipq40xx:
+	@mkdir -p $(BUILD_TOPDIR)/bin
 	@cd $(BUILD_TOPDIR)/uboot/ && $(MAKECMD) ipq40xx_cdp_config
 	@cd $(BUILD_TOPDIR)/uboot/ && $(MAKECMD) ENDIANNESS=-EB V=1 all
 	@cp $(BUILD_TOPDIR)/uboot/u-boot.bin $(BUILD_TOPDIR)/bin/temp.bin
