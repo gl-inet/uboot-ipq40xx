@@ -104,6 +104,13 @@
 #endif
 #include "tftp.h"
 
+#if defined(CONFIG_CMD_HTTPD)
+#include "../httpd/uipopt.h"
+#include "../httpd/uip.h"
+#include "../httpd/uip_arp.h"
+#include "gl_config.h"
+#endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 /** BOOTP EXTENTIONS **/
@@ -201,6 +208,13 @@ static ulong	timeStart;
 static ulong	timeDelta;
 /* THE transmit packet */
 uchar *NetTxPacket;
+unsigned char *webfailsafe_data_pointer = NULL;
+int	webfailsafe_is_running = 0;
+int	webfailsafe_ready_for_upgrade = 0;
+int	webfailsafe_upgrade_type = WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE;
+uchar          *NetArpWaitTxPacket;	/* THE transmit packet			*/
+uchar 		NetArpWaitPacketBuf[PKTSIZE_ALIGN + PKTALIGN];
+extern IPaddr_t	NetArpWaitReplyIP;
 
 static int net_check_prereq(enum proto_t protocol);
 
@@ -926,6 +940,13 @@ NetReceive(uchar *inpkt, int len)
 
 	debug_cond(DEBUG_NET_PKT, "packet received\n");
 
+	#if defined(CONFIG_CMD_HTTPD)
+	if(webfailsafe_is_running){
+		NetReceiveHttpd(inpkt, len);
+		return;
+	}
+	#endif
+
 	NetRxPacket = inpkt;
 	NetRxPacketLen = len;
 	et = (struct ethernet_hdr *)inpkt;
@@ -1447,3 +1468,232 @@ ushort getenv_VLAN(char *var)
 {
 	return string_to_VLAN(getenv(var));
 }
+
+void print_IPaddr (IPaddr_t x)
+{
+	char tmp[16];
+	ip_to_string (x, tmp);
+	puts (tmp);
+}
+#if 1 /* for web failsafe mod , added by kyson<luoweilong@gl-inet.com> */
+/**********************************************************************************
+ * HTTPD section
+ */
+
+#define BUF	((struct uip_eth_hdr *)&uip_buf[0])
+
+void NetSendHttpd(void){
+	volatile uchar *tmpbuf = NetTxPacket;
+	int i;
+
+	for(i = 0; i < 40 + UIP_LLH_LEN; i++){
+		tmpbuf[i] = uip_buf[i];
+	}
+
+	for(; i < uip_len; i++){
+		tmpbuf[i] = uip_appdata[i - 40 - UIP_LLH_LEN];
+	}
+
+	eth_send(NetTxPacket, uip_len);
+}
+
+void NetReceiveHttpd( volatile uchar * inpkt, int len ) 
+{
+
+
+	memcpy(uip_buf, (const void *)inpkt, len);
+	uip_len = len;
+
+	if ( BUF->type == htons( UIP_ETHTYPE_IP ) ) {
+		uip_arp_ipin();
+		uip_input();
+
+		if(uip_len > 0){
+			uip_arp_out();
+			NetSendHttpd();
+		}
+	} else if( BUF->type == htons( UIP_ETHTYPE_ARP ) ) {
+		uip_arp_arpin();
+
+		if(uip_len > 0){
+			NetSendHttpd();
+		}
+	}
+}
+
+/* *************************************
+ *
+ * HTTP web server for web failsafe mode
+ *
+ ***************************************/
+int HttpdLoop()
+{
+	bd_t *bd = gd->bd;
+	int ret = -1;
+	uip_ipaddr_t ipaddr;
+	unsigned short int ip[2];
+	struct uip_eth_addr eaddr;
+
+	NetRestarted = 0;
+	NetDevExists = 0;
+	NetTryCount = 1;
+
+	/* XXX problem with bss workaround */
+	NetArpWaitPacketMAC	= NULL;
+	NetArpWaitTxPacket	= NULL;
+	NetArpWaitPacketIP	= 0;
+	NetArpWaitReplyIP	= 0;
+	NetArpWaitTxPacket	= NULL;
+	NetTxPacket			= NULL;
+
+	if(!NetTxPacket){
+		int i;
+		// Setup packet buffers, aligned correctly.
+		NetTxPacket = &PktBuf[0] + (PKTALIGN - 1);
+		NetTxPacket -= (ulong)NetTxPacket % PKTALIGN;
+
+		for(i = 0; i < PKTBUFSRX; i++){
+			NetRxPackets[i] = NetTxPacket + (i + 1) * PKTSIZE_ALIGN;
+		}
+	}
+
+	if(!NetArpWaitTxPacket){
+		NetArpWaitTxPacket = &NetArpWaitPacketBuf[0] + (PKTALIGN - 1);
+		NetArpWaitTxPacket -= (ulong)NetArpWaitTxPacket % PKTALIGN;
+		NetArpWaitTxPacketSize = 0;
+	}
+
+	// restart label
+
+	debug_cond(DEBUG_INT_STATE, "--- NetLoop Entry\n");
+
+	bootstage_mark_name(BOOTSTAGE_ID_ETH_START, "eth_start");
+tryagain:
+	net_init();
+	eth_halt();
+	eth_set_current();
+	if (eth_init(bd) < 0) {
+		eth_halt();
+		udelay(1000000);
+		goto tryagain;
+	}
+
+restart:
+	net_set_state(NETLOOP_CONTINUE);
+
+	/*
+	 *	Start the ball rolling with the given start function.  From
+	 *	here on, this code is a state machine driven by received
+	 *	packets and timer events.
+	 */
+	debug_cond(DEBUG_INT_STATE, "--- NetLoop Init\n");
+	NetInitLoop();
+
+	NetDevExists = 1;
+	NetBootFileXferSize = 0;
+
+	if (NetOurIP == 0) {
+		puts("*** ERROR: `ipaddr' not set\n");
+	}
+	if (memcmp(NetOurEther, "\0\0\0\0\0\0", 6) == 0) {
+		int num = eth_get_dev_index();
+		switch (num) {
+		case -1:
+			puts("*** ERROR: No ethernet found.\n");
+			return 1;
+		case 0:
+			puts("*** ERROR: `ethaddr' not set\n");
+			break;
+		default:
+			printf("*** ERROR: `eth%daddr' not set\n",
+				num);
+			break;
+		}
+		NetStartAgain();
+		return 2;
+	}
+	printf("NetOurEther = %02x:%02x:%02x:%02x:%02x:%02x\n", 
+		NetOurEther[0], NetOurEther[1], NetOurEther[2], NetOurEther[3], NetOurEther[4], NetOurEther[5]);
+	HttpdStart();
+	// get MAC address
+	eaddr.addr[0] = NetOurEther[0];
+	eaddr.addr[1] = NetOurEther[1];
+	eaddr.addr[2] = NetOurEther[2];
+	eaddr.addr[3] = NetOurEther[3];
+	eaddr.addr[4] = NetOurEther[4];
+	eaddr.addr[5] = NetOurEther[5];
+	uip_setethaddr( eaddr );
+	IPaddr_t tmp_ip_addr = ntohl( bd->bi_ip_addr );
+	printf( "HTTP server is starting at IP: %ld.%ld.%ld.%ld\n", 
+		( tmp_ip_addr & 0xff000000 ) >> 24, ( tmp_ip_addr & 0x00ff0000 ) >> 16, 
+		( tmp_ip_addr & 0x0000ff00 ) >> 8, ( tmp_ip_addr & 0x000000ff ) );
+	ip[0] = htons( ( tmp_ip_addr & 0xFFFF0000 ) >> 16 );
+	ip[1] = htons( tmp_ip_addr & 0x0000FFFF );
+	uip_sethostaddr( ip );
+	ip[0] = htons( ( ( 0xFFFFFF00 & 0xFFFF0000 ) >> 16 ) );
+	ip[1] = htons( ( 0xFFFFFF00 & 0x0000FFFF ) );
+	uip_setnetmask( ip );
+	do_http_progress( WEBFAILSAFE_PROGRESS_START );
+	webfailsafe_is_running = 1;
+	for (;;) {
+		WATCHDOG_RESET();
+#ifdef CONFIG_SHOW_ACTIVITY
+		show_activity(1);
+#endif
+		if ( eth_rx() != -1 )
+			HttpdHandler();
+
+		if (ctrlc()) {
+			NetArpWaitPacketIP = 0;
+
+			net_cleanup_loop();
+			eth_halt();
+			puts("\nAbort\n");
+			debug_cond(DEBUG_INT_STATE, "--- NetLoop Abort!\n");
+			do_reset(NULL, 0, 0, NULL);
+			goto done;
+		}
+		if ( !webfailsafe_ready_for_upgrade ) {
+			continue;
+		}
+		eth_halt();
+		do_http_progress( WEBFAILSAFE_PROGRESS_UPLOAD_READY );
+		if ( do_http_upgrade( NetBootFileXferSize, webfailsafe_upgrade_type ) == 0 ) {
+			udelay( 500000 );
+			do_http_progress( WEBFAILSAFE_PROGRESS_UPGRADE_READY );
+			udelay( 500000 );
+			do_reset( NULL, 0, 0, NULL );
+		}
+		switch (net_state) {
+		case NETLOOP_RESTART:
+			NetRestarted = 1;
+			goto restart;
+		case NETLOOP_SUCCESS:
+			net_cleanup_loop();
+			if (NetBootFileXferSize > 0) {
+				char buf[20];
+				printf("Bytes transferred = %ld (%lx hex)\n",
+					NetBootFileXferSize,
+					NetBootFileXferSize);
+				sprintf(buf, "%lX", NetBootFileXferSize);
+				setenv("filesize", buf);
+				sprintf(buf, "%lX", (unsigned long)load_addr);
+				setenv("fileaddr", buf);
+			}
+			eth_halt();
+			ret = NetBootFileXferSize;
+			debug_cond(DEBUG_INT_STATE, "--- NetLoop Success!\n");
+			goto done;
+		case NETLOOP_FAIL:
+			net_cleanup_loop();
+			debug_cond(DEBUG_INT_STATE, "--- NetLoop Fail!\n");
+			goto done;
+		case NETLOOP_CONTINUE:
+			continue;
+		}
+	}
+done:
+	return ret;
+}
+#endif
+

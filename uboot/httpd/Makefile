@@ -1,5 +1,5 @@
 #
-# (C) Copyright 2000-2006
+# Copyright 2000-2008
 # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
 #
 # See file CREDITS for list of people who contributed to this
@@ -12,7 +12,7 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -23,32 +23,28 @@
 
 include $(TOPDIR)/config.mk
 
-# CFLAGS += -DDEBUG
+LIB 	:= $(obj)libhttpd.o
 
-LIB	= $(obj)libnet.o
+COBJS-y	+= uip.o
+COBJS-y	+= uip_arch.o
+COBJS-y	+= httpd.o
+COBJS-y	+= uip_arp.o
+COBJS-y	+= fs.o
 
-COBJS-$(CONFIG_CMD_NET)  += arp.o
-COBJS-$(CONFIG_CMD_NET)  += bootp.o
-COBJS-$(CONFIG_CMD_CDP)  += cdp.o
-COBJS-$(CONFIG_CMD_DNS)  += dns.o
-COBJS-$(CONFIG_CMD_NET)  += eth.o
-COBJS-$(CONFIG_CMD_LINK_LOCAL) += link_local.o
-COBJS-$(CONFIG_CMD_NET)  += net.o
-COBJS-$(CONFIG_CMD_NFS)  += nfs.o
-COBJS-$(CONFIG_CMD_PING) += ping.o
-COBJS-$(CONFIG_CMD_RARP) += rarp.o
-COBJS-$(CONFIG_CMD_SNTP) += sntp.o
-COBJS-$(CONFIG_CMD_NET)  += tftp.o
-COBJS-$(CONFIG_CMD_NET)  += httpd.o
-
-COBJS	:= $(sort $(COBJS-y))
-SRCS	:= $(COBJS:.o=.c)
-OBJS	:= $(addprefix $(obj),$(COBJS))
+COBJS	:= $(COBJS-y)
+SRCS 	:= $(COBJS:.o=.c)
+OBJS 	:= $(addprefix $(obj),$(COBJS))
 
 all:	$(LIB)
 
+fs.c:   fsdata.c
+
+fsdata.c:
+	./vendors/makefsdatac $(DEVICE_VENDOR)
+
 $(LIB):	$(obj).depend $(OBJS)
 	$(call cmd_link_o_target, $(OBJS))
+
 
 #########################################################################
 
@@ -57,4 +53,4 @@ include $(SRCTREE)/rules.mk
 
 sinclude $(obj).depend
 
-#########################################################################
+########################################################################

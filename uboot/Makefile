@@ -260,6 +260,7 @@ LIBS += drivers/bios_emulator/libatibiosemu.o
 LIBS += drivers/block/libblock.o
 LIBS += drivers/dma/libdma.o
 LIBS += drivers/fpga/libfpga.o
+LIBS += httpd/libhttpd.o
 LIBS += drivers/gpio/libgpio.o
 LIBS += drivers/hwmon/libhwmon.o
 LIBS += drivers/i2c/libi2c.o
