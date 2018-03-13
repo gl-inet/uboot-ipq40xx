@@ -480,14 +480,12 @@ void uip_log(char *msg);
  * which are big endian. The BYTE_ORDER macro should be changed to
  * reflect the CPU architecture on which uIP is to be run.
  */
-
 #ifndef LITTLE_ENDIAN
 #define LITTLE_ENDIAN  3412
 #endif /* LITTLE_ENDIAN */
 #ifndef BIG_ENDIAN
 #define BIG_ENDIAN     1234
 #endif /* BIGE_ENDIAN */
-
 
 /**
  * The byte order of the CPU architecture on which uIP is to be run.

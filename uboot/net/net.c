@@ -110,7 +110,6 @@
 #include "../httpd/uip_arp.h"
 #include "gl_config.h"
 #endif
-
 DECLARE_GLOBAL_DATA_PTR;
 
 /** BOOTP EXTENTIONS **/
@@ -946,7 +945,6 @@ NetReceive(uchar *inpkt, int len)
 		return;
 	}
 	#endif
-
 	NetRxPacket = inpkt;
 	NetRxPacketLen = len;
 	et = (struct ethernet_hdr *)inpkt;
@@ -1469,18 +1467,12 @@ ushort getenv_VLAN(char *var)
 	return string_to_VLAN(getenv(var));
 }
 
-void print_IPaddr (IPaddr_t x)
-{
-	char tmp[16];
-	ip_to_string (x, tmp);
-	puts (tmp);
-}
-#if 1 /* for web failsafe mod , added by kyson<luoweilong@gl-inet.com> */
+
 /**********************************************************************************
  * HTTPD section
  */
 
-#define BUF	((struct uip_eth_hdr *)&uip_buf[0])
+#if defined(CONFIG_CMD_HTTPD)
 
 void NetSendHttpd(void){
 	volatile uchar *tmpbuf = NetTxPacket;
@@ -1497,14 +1489,13 @@ void NetSendHttpd(void){
 	eth_send(NetTxPacket, uip_len);
 }
 
-void NetReceiveHttpd( volatile uchar * inpkt, int len ) 
-{
-
+void NetReceiveHttpd(volatile uchar * inpkt, int len){
+	struct uip_eth_hdr *eth_hdr = (struct uip_eth_hdr *)uip_buf;
 
 	memcpy(uip_buf, (const void *)inpkt, len);
 	uip_len = len;
 
-	if ( BUF->type == htons( UIP_ETHTYPE_IP ) ) {
+	if(eth_hdr->type == htons(UIP_ETHTYPE_IP)){
 		uip_arp_ipin();
 		uip_input();
 
@@ -1512,7 +1503,7 @@ void NetReceiveHttpd( volatile uchar * inpkt, int len )
 			uip_arp_out();
 			NetSendHttpd();
 		}
-	} else if( BUF->type == htons( UIP_ETHTYPE_ARP ) ) {
+	} else if(eth_hdr->type == htons(UIP_ETHTYPE_ARP)){
 		uip_arp_arpin();
 
 		if(uip_len > 0){
@@ -1526,17 +1517,16 @@ void NetReceiveHttpd( volatile uchar * inpkt, int len )
  * HTTP web server for web failsafe mode
  *
  ***************************************/
-int HttpdLoop()
-{
+int NetLoopHttpd(void){
 	bd_t *bd = gd->bd;
-	int ret = -1;
-	uip_ipaddr_t ipaddr;
 	unsigned short int ip[2];
+	unsigned char ethinit_attempt = 0;
 	struct uip_eth_addr eaddr;
 
+#ifdef CONFIG_NET_MULTI
 	NetRestarted = 0;
 	NetDevExists = 0;
-	NetTryCount = 1;
+#endif
 
 	/* XXX problem with bss workaround */
 	NetArpWaitPacketMAC	= NULL;
@@ -1564,136 +1554,180 @@ int HttpdLoop()
 	}
 
 	// restart label
+	restart:
 
-	debug_cond(DEBUG_INT_STATE, "--- NetLoop Entry\n");
-
-	bootstage_mark_name(BOOTSTAGE_ID_ETH_START, "eth_start");
-tryagain:
-	net_init();
 	eth_halt();
+
+#ifdef CONFIG_NET_MULTI
 	eth_set_current();
-	if (eth_init(bd) < 0) {
-		eth_halt();
-		udelay(1000000);
-		goto tryagain;
-	}
+#endif
 
-restart:
-	net_set_state(NETLOOP_CONTINUE);
-
-	/*
-	 *	Start the ball rolling with the given start function.  From
-	 *	here on, this code is a state machine driven by received
-	 *	packets and timer events.
-	 */
-	debug_cond(DEBUG_INT_STATE, "--- NetLoop Init\n");
-	NetInitLoop();
-
-	NetDevExists = 1;
-	NetBootFileXferSize = 0;
-
-	if (NetOurIP == 0) {
-		puts("*** ERROR: `ipaddr' not set\n");
-	}
-	if (memcmp(NetOurEther, "\0\0\0\0\0\0", 6) == 0) {
-		int num = eth_get_dev_index();
-		switch (num) {
-		case -1:
-			puts("*** ERROR: No ethernet found.\n");
-			return 1;
-		case 0:
-			puts("*** ERROR: `ethaddr' not set\n");
+	while(ethinit_attempt < 10){
+		if(!eth_init(bd)){
+			ethinit_attempt = 0;
 			break;
-		default:
-			printf("*** ERROR: `eth%daddr' not set\n",
-				num);
-			break;
+		} else {
+			ethinit_attempt++;
+			eth_halt();
+			udelay(1000000);
 		}
-		NetStartAgain();
-		return 2;
 	}
-	printf("NetOurEther = %02x:%02x:%02x:%02x:%02x:%02x\n", 
-		NetOurEther[0], NetOurEther[1], NetOurEther[2], NetOurEther[3], NetOurEther[4], NetOurEther[5]);
-	HttpdStart();
+
+	if(ethinit_attempt > 0){
+		eth_halt();
+		printf("couldn't initialize eth (cable disconnected?)!\n\n");
+		return(-1);
+	}
+
 	// get MAC address
+#ifdef CONFIG_NET_MULTI
+	memcpy(NetOurEther, eth_get_dev()->enetaddr, 6);
+#else
+	eth_getenv_enetaddr("ethaddr", NetOurEther);
+#endif
+
 	eaddr.addr[0] = NetOurEther[0];
 	eaddr.addr[1] = NetOurEther[1];
 	eaddr.addr[2] = NetOurEther[2];
 	eaddr.addr[3] = NetOurEther[3];
 	eaddr.addr[4] = NetOurEther[4];
 	eaddr.addr[5] = NetOurEther[5];
-	uip_setethaddr( eaddr );
+
+	// set MAC address
+	uip_setethaddr(eaddr);
+
+	// set ip and other addresses
+	// TODO: do we need this with uIP stack?
+	NetCopyIP(&NetOurIP, &bd->bi_ip_addr);
+
+	NetOurGatewayIP		= getenv_IPaddr("gatewayip");
+	NetOurSubnetMask	= getenv_IPaddr("netmask");
+	NetOurVLAN			= getenv_VLAN("vlan");
+	NetOurNativeVLAN	= getenv_VLAN("nvlan");
+
+	// start server...
 	IPaddr_t tmp_ip_addr = ntohl( bd->bi_ip_addr );
 	printf( "HTTP server is starting at IP: %ld.%ld.%ld.%ld\n", 
 		( tmp_ip_addr & 0xff000000 ) >> 24, ( tmp_ip_addr & 0x00ff0000 ) >> 16, 
 		( tmp_ip_addr & 0x0000ff00 ) >> 8, ( tmp_ip_addr & 0x000000ff ) );
+
+	HttpdStart();
+
+	// set local host ip address
 	ip[0] = htons( ( tmp_ip_addr & 0xFFFF0000 ) >> 16 );
 	ip[1] = htons( tmp_ip_addr & 0x0000FFFF );
-	uip_sethostaddr( ip );
+
+	uip_sethostaddr(ip);
+
+	// set network mask (255.255.255.0 -> local network)
 	ip[0] = htons( ( ( 0xFFFFFF00 & 0xFFFF0000 ) >> 16 ) );
 	ip[1] = htons( ( 0xFFFFFF00 & 0x0000FFFF ) );
-	uip_setnetmask( ip );
-	do_http_progress( WEBFAILSAFE_PROGRESS_START );
+
+	uip_setnetmask(ip);
+
+	// should we also set default router ip address?
+	//uip_setdraddr();
+
+	// show current progress of the process
+	do_http_progress(WEBFAILSAFE_PROGRESS_START);
+
 	webfailsafe_is_running = 1;
-	for (;;) {
-		WATCHDOG_RESET();
-#ifdef CONFIG_SHOW_ACTIVITY
-		show_activity(1);
-#endif
-		if ( eth_rx() != -1 )
-			HttpdHandler();
 
-		if (ctrlc()) {
-			NetArpWaitPacketIP = 0;
+	int led_off = 0;
+	int cnt_up = 1;
+	int cnt = 0;
 
-			net_cleanup_loop();
-			eth_halt();
-			puts("\nAbort\n");
-			debug_cond(DEBUG_INT_STATE, "--- NetLoop Abort!\n");
-			do_reset(NULL, 0, 0, NULL);
-			goto done;
-		}
-		if ( !webfailsafe_ready_for_upgrade ) {
-			continue;
-		}
-		eth_halt();
-		do_http_progress( WEBFAILSAFE_PROGRESS_UPLOAD_READY );
-		if ( do_http_upgrade( NetBootFileXferSize, webfailsafe_upgrade_type ) == 0 ) {
-			udelay( 500000 );
-			do_http_progress( WEBFAILSAFE_PROGRESS_UPGRADE_READY );
-			udelay( 500000 );
-			do_reset( NULL, 0, 0, NULL );
-		}
-		switch (net_state) {
-		case NETLOOP_RESTART:
-			NetRestarted = 1;
-			goto restart;
-		case NETLOOP_SUCCESS:
-			net_cleanup_loop();
-			if (NetBootFileXferSize > 0) {
-				char buf[20];
-				printf("Bytes transferred = %ld (%lx hex)\n",
-					NetBootFileXferSize,
-					NetBootFileXferSize);
-				sprintf(buf, "%lX", NetBootFileXferSize);
-				setenv("filesize", buf);
-				sprintf(buf, "%lX", (unsigned long)load_addr);
-				setenv("fileaddr", buf);
+	// infinite loop
+	for(;;){
+		//if (cnt == led_off)
+			//all_led_off();
+		//else if (cnt == 0)
+			//all_led_on();
+
+		cnt++;
+
+		if (cnt == 1024) {
+			cnt = 0;
+
+			if (cnt_up) {
+				led_off++;
+
+				if (led_off == 1024)
+					cnt_up = 0;
+			} else {
+				led_off--;
+
+				if (led_off == 0)
+					cnt_up = 1;
 			}
+		}
+
+		/*
+		 *	Check the ethernet for a new packet.
+		 *	The ethernet receive routine will process it.
+		 */
+		if(eth_rx() > 0){
+			HttpdHandler();
+		}
+
+		// if CTRL+C was pressed -> return!
+		if(ctrlc()){
 			eth_halt();
-			ret = NetBootFileXferSize;
-			debug_cond(DEBUG_INT_STATE, "--- NetLoop Success!\n");
-			goto done;
-		case NETLOOP_FAIL:
-			net_cleanup_loop();
-			debug_cond(DEBUG_INT_STATE, "--- NetLoop Fail!\n");
-			goto done;
-		case NETLOOP_CONTINUE:
+
+			// reset global variables to default state
+			webfailsafe_is_running = 0;
+			webfailsafe_ready_for_upgrade = 0;
+			webfailsafe_upgrade_type = WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE;
+
+			/* Invalidate the last protocol */
+			//eth_set_last_protocol(BOOTP);
+
+			//all_led_off();
+
+			printf("\nWeb failsafe mode aborted!\n\n");
+			return(-1);
+		}
+
+		// until upload is not completed, get back to the start of the loop
+		if(!webfailsafe_ready_for_upgrade){
 			continue;
 		}
+
+		// stop eth interface
+		eth_halt();
+
+		// show progress
+		do_http_progress(WEBFAILSAFE_PROGRESS_UPLOAD_READY);
+
+		// try to make upgrade!
+		if(do_http_upgrade(NetBootFileXferSize, webfailsafe_upgrade_type) >= 0){
+			udelay(500000);
+
+			do_http_progress(WEBFAILSAFE_PROGRESS_UPGRADE_READY);
+
+			udelay(500000);
+
+			/* reset the board */
+			do_reset(NULL, 0, 0, NULL);
+		}
+		break;
 	}
-done:
-	return ret;
+
+	// reset global variables to default state
+	webfailsafe_is_running = 0;
+	webfailsafe_ready_for_upgrade = 0;
+	webfailsafe_upgrade_type = WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE;
+
+	NetBootFileXferSize = 0;
+
+	do_http_progress(WEBFAILSAFE_PROGRESS_UPGRADE_FAILED);
+
+	//all_led_off();
+
+	// go to restart
+	goto restart;
+
+	return(-1);
 }
-#endif
+#endif /* CONFIG_CMD_HTTPD */
 

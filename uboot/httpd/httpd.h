@@ -57,13 +57,12 @@ void httpd_appcall(void);
 #endif
 
 struct httpd_state {
-	unsigned char state;
-	unsigned short count;
-	unsigned char *dataptr;
+	u8_t state;
+	u16_t count;
+	u8_t *dataptr;
 	unsigned int upload;
 	unsigned int upload_total;
 };
-
 
 /* UIP_APPSTATE_SIZE: The size of the application-specific state
  stored in the uip_conn structure. */

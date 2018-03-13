@@ -61,8 +61,6 @@
 
 #include "uip_arp.h"
 
-//#include <string.h>
-
 struct uip_arp_hdr {
   struct uip_eth_hdr ethhdr;
   u16_t hwtype;
@@ -160,7 +158,7 @@ uip_arp_timer(void)
 static void
 uip_arp_update(u16_t *ipaddr, struct uip_eth_addr *ethaddr)
 {
-  register struct arp_entry *tabptr;
+  register struct arp_entry *tabptr = 0;
   /* Walk through the ARP mapping table and try to find an entry to
      update. If none is found, the IP -> MAC address mapping is
      inserted in the ARP table. */
@@ -284,7 +282,7 @@ uip_arp_arpin(void)
   }
 
   uip_len = 0;
-  
+
   switch(BUF->opcode) {
   case HTONS(ARP_REQUEST):
     /* ARP request. If it asked for our address, we send out a
@@ -352,7 +350,7 @@ uip_arp_arpin(void)
 void
 uip_arp_out(void)
 {
-  struct arp_entry *tabptr;
+  struct arp_entry *tabptr = 0;
   /* Find the destination IP address in the ARP table and construct
      the Ethernet header. If the destination IP addres isn't on the
      local network, we use the default router's IP address instead.

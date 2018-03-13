@@ -2,7 +2,6 @@
 #include "httpd.h"
 #include "fs.h"
 #include "fsdata.h"
-#include <malloc.h>
 #include "gl_config.h"
 
 #define STATE_NONE				0		// empty state (waiting for request...)
@@ -40,10 +39,6 @@ extern int webfailsafe_upgrade_type;
 extern ulong NetBootFileXferSize;
 extern unsigned char *webfailsafe_data_pointer;
 
-//extern void wan_led_toggle(void);
-
-// extern flash_info_t flash_info[];
-
 // http app state
 struct httpd_state *hs;
 
@@ -52,14 +47,12 @@ static int webfailsafe_upload_failed = 0;
 static int data_start_found = 0;
 
 static unsigned char post_packet_counter = 0;
-static unsigned char post_line_counter = 0;
 
 // 0x0D -> CR 0x0A -> LF
 static char eol[3] = { 0x0d, 0x0a, 0x00 };
 static char eol2[5] = { 0x0d, 0x0a, 0x0d, 0x0a, 0x00 };
 
 static char *boundary_value;
-
 
 // str to int
 static int atoi(const char *s){
@@ -73,39 +66,27 @@ static int atoi(const char *s){
 }
 
 // print downloading progress
-static void httpd_download_progress( void ){
-	if ( post_packet_counter == 39 ) {
-		puts( "\n         " );
+static void httpd_download_progress(void){
+	if(post_packet_counter == 39){
+		puts("\n         ");
 		post_packet_counter = 0;
-		post_line_counter++;
-	}
-
-	if (post_line_counter == 10) {
-		//wan_led_toggle();
-		post_line_counter = 0;
-		//LED_TWINKLE(GPIO_MESH_LED);
 	}
 
 	puts("#");
-	//printf("hs->upload = %d\n", hs->upload);
 	post_packet_counter++;
-
 }
 
 // http server init
-void httpd_init( void ) 
-{
+void httpd_init(void){
 	fs_init();
-	uip_listen( HTONS( 80 ) );
+	uip_listen(HTONS(80));
 }
 
 // reset app state
-#if 1
-static void httpd_state_reset(void)
-{
+static void httpd_state_reset(void){
 	hs->state = STATE_NONE;
 	hs->count = 0;
-	hs->dataptr = NULL;
+	hs->dataptr = 0;
 	hs->upload = 0;
 	hs->upload_total = 0;
 
@@ -116,76 +97,38 @@ static void httpd_state_reset(void)
 		free(boundary_value);
 	}
 }
-#else
-void httpd_state_reset(struct httpd_state *hs)
-{
-	hs->state = STATE_NONE;
-	hs->count = 0;
-	hs->dataptr = NULL;
-	hs->upload = 0;
-	hs->upload_total = 0;
-
-	data_start_found = 0;
-	post_packet_counter = 0;
-
-	if(boundary_value){
-		free(boundary_value);
-	}
-}
-
-#endif
 
 // find and get first chunk of data
-static int httpd_findandstore_firstchunk(void)
-{
+static int httpd_findandstore_firstchunk(void){
 	char *start = NULL;
 	char *end = NULL;
-	char *lede_fw = NULL;
-	char *qsdk_fw = NULL;
-//	flash_info_t *info = &flash_info[0];
 
-	if ( !boundary_value ) {
+	if(!boundary_value){
 		return(0);
 	}
 
 	// chek if we have data in packet
-	start = ( char * )strstr( ( char * )uip_appdata, ( char * )boundary_value );
+	start = (char *)strstr((char *)uip_appdata, (char *)boundary_value);
 
-	if ( start ) {
+	if(start){
 
 		// ok, we have data in this packet!
 		// find upgrade type
 
-		end = ( char * )strstr( ( char * )start, "name=\"firmware\"" );
+		end = (char *)strstr((char *)start, "name=\"firmware\"");
 
-		if ( end ) {
+		if(end){
 
-			printf( "Upgrade type: " );
-			lede_fw = ( char * )strstr( ( char * )start, "lede" );
-			if ( lede_fw ) {
-				webfailsafe_upgrade_type = WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE;
-				printf("lede firmware\n");
-				goto skip;
-			}
-
-			qsdk_fw = ( char * )strstr( ( char * )start, "qsdk" );
-			if ( qsdk_fw ) {
-				webfailsafe_upgrade_type = WEBFAILSAFE_UPGRADE_TYPE_QSDK_FIRMWARE;
-				printf("qsdk firmware\n");
-				goto skip;
-			}
-
-			if ( !lede_fw && !qsdk_fw ) {
-				printf("unknown firmware\n");
-			}
+			printf("Upgrade type: firmware\n");
+			webfailsafe_upgrade_type = WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE;
 
 		} else {
 
-			end = ( char * )strstr( ( char * )start, "name=\"uboot\"" );
+			end = (char *)strstr((char *)start, "name=\"uboot\"");
 
-			if ( end ) {
+			if(end){
 #if defined(WEBFAILSAFE_DISABLE_UBOOT_UPGRADE)
-				printf("## Error: U-Boot upgrade is not allowed on this board!\n");
+				printf("U-Boot upgrade is not allowed on this board!\n");
 				webfailsafe_upload_failed = 1;
 #else
 				webfailsafe_upgrade_type = WEBFAILSAFE_UPGRADE_TYPE_UBOOT;
@@ -197,7 +140,7 @@ static int httpd_findandstore_firstchunk(void)
 
 				if(end){
 #if defined(WEBFAILSAFE_DISABLE_ART_UPGRADE)
-					printf("## Error: U-Boot upgrade is not allowed on this board!\n");
+					printf("U-Boot upgrade is not allowed on this board!\n");
 					webfailsafe_upload_failed = 1;
 #else
 					printf("Upgrade type: ART\n");
@@ -206,18 +149,18 @@ static int httpd_findandstore_firstchunk(void)
 					// if we don't have ART partition offset, it means that it should be
 					// stored on the last 64 KiB block -> in most supported board
 					// the ART partition occupies last 64 KiB block
-/* #if !defined(WEBFAILSAFE_UPLOAD_ART_ADDRESS)
+#if !defined(WEBFAILSAFE_UPLOAD_ART_ADDRESS)
 					// if we don't know the flash type, we won't allow to update ART,
 					// because we don't know flash size
 					if(info->flash_id == FLASH_CUSTOM){
-						printf("## Error: unknown FLASH type, can't update ART!\n");
+						printf("unknown FLASH type, can't update ART!\n");
 						webfailsafe_upload_failed = 1;
 					}
-#endif */
+#endif
 #endif /* if defined(WEBFAILSAFE_DISABLE_ART_UPGRADE) */
 				} else {
 
-					printf("## Error: input name not found!\n");
+					printf("input name not found!\n");
 					return(0);
 
 				}
@@ -225,10 +168,8 @@ static int httpd_findandstore_firstchunk(void)
 			}
 
 		}
-skip:
+
 		end = NULL;
-		lede_fw = NULL;
-		qsdk_fw = NULL;
 
 		// find start position of the data!
 		end = (char *)strstr((char *)start, eol2);
@@ -250,23 +191,23 @@ skip:
 				// has correct size (for every type of upgrade)
 
 				// U-Boot
-				if((webfailsafe_upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_UBOOT) && (hs->upload_total > WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES)){
+				if((webfailsafe_upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_UBOOT) && (hs->upload_total > CONFIG_MAX_UBOOT_SIZE)){
 
-					printf("## Error: wrong file size, should be less than: %d bytes!\n", WEBFAILSAFE_UPLOAD_UBOOT_SIZE_IN_BYTES);
+					printf("file too big!\n");
 					webfailsafe_upload_failed = 1;
 
 				// ART
 				} else if((webfailsafe_upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_ART) && (hs->upload_total != WEBFAILSAFE_UPLOAD_ART_SIZE_IN_BYTES)){
 
-					printf("## Error: wrong file size, should be: %d bytes!\n", WEBFAILSAFE_UPLOAD_ART_SIZE_IN_BYTES);
+					printf("wrong file size, should be: %d bytes!\n", WEBFAILSAFE_UPLOAD_ART_SIZE_IN_BYTES);
 					webfailsafe_upload_failed = 1;
-/*
-				// firmware can't exceed: (FLASH_SIZE -  WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES)
-				} else if(hs->upload_total > (info->size - WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES)){
 
-					printf("## Error: file too big!\n");
+				// firmware can't exceed: (FLASH_SIZE -  WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES)
+				} else if(hs->upload_total > WEBFAILSAFE_UPLOAD_LIMITED_AREA_IN_BYTES){
+
+					printf("file too big!\n");
 					webfailsafe_upload_failed = 1;
-*/
+
 				}
 
 				printf("Loading: ");
@@ -284,7 +225,7 @@ skip:
 			}
 
 		} else {
-			printf("## Error: couldn't find start of data!\n");
+			printf("couldn't find start of data!\n");
 		}
 
 	}
@@ -292,24 +233,20 @@ skip:
 	return(0);
 }
 
-void httpd_appcall(void)
-{
+// called for http server app
+void httpd_appcall(void){
 	struct fs_file fsfile;
 	unsigned int i;
 
-	//printf("----->httpd_appcall.\n");
-	// app state
-	hs = &(uip_conn->appstate);
-
-	//printf("state = %d, count = %d, upload = %d, upload_total = %d\n", hs->state, hs->count, hs->upload, hs->upload_total);
-#if 1
-
 	switch(uip_conn->lport){
+
 		case HTONS(80):
-			
+
+			// app state
+			hs = &(uip_conn->appstate);
+
 			// closed connection
 			if(uip_closed()){
-				printf("%d.uip_closed\n", __LINE__);
 				httpd_state_reset();
 				uip_close();
 				return;
@@ -317,7 +254,6 @@ void httpd_appcall(void)
 
 			// aborted connection or time out occured
 			if(uip_aborted() || uip_timedout()){
-				//printf("%s, %d\n", __FUNCTION__, __LINE__);
 				httpd_state_reset();
 				uip_abort();
 				return;
@@ -326,7 +262,6 @@ void httpd_appcall(void)
 			// if we are pooled
 			if(uip_poll()){
 				if(hs->count++ >= 100){
-					//printf("%s, %d\n", __FUNCTION__, __LINE__);
 					httpd_state_reset();
 					uip_abort();
 				}
@@ -335,15 +270,12 @@ void httpd_appcall(void)
 
 			// new connection
 			if(uip_connected()){
-				//printf("%s, %d\n", __FUNCTION__, __LINE__);
 				httpd_state_reset();
 				return;
 			}
 
 			// new data in STATE_NONE
 			if(uip_newdata() && hs->state == STATE_NONE){
-
-				//printf("%s, %d\n", __FUNCTION__, __LINE__);
 
 				// GET or POST request?
 				if(uip_appdata[0] == ISO_G && uip_appdata[1] == ISO_E && uip_appdata[2] == ISO_T && (uip_appdata[3] == ISO_space || uip_appdata[3] == ISO_tab)){
@@ -354,7 +286,6 @@ void httpd_appcall(void)
 
 				// anything else -> abort the connection!
 				if(hs->state == STATE_NONE){
-					
 					httpd_state_reset();
 					uip_abort();
 					return;
@@ -372,8 +303,8 @@ void httpd_appcall(void)
 						}
 					}
 
-					if (i != 0){
-						printf("## Error: request file name too long!\n");
+					if(i != 0){
+						printf("request file name too long!\n");
 						httpd_state_reset();
 						uip_abort();
 						return;
@@ -383,23 +314,21 @@ void httpd_appcall(void)
 					printf("%s\n", &uip_appdata[4]);
 
 					// request for /
-					if (uip_appdata[4] == ISO_slash && uip_appdata[5] == 0){
+					if(uip_appdata[4] == ISO_slash && uip_appdata[5] == 0){
 						fs_open(file_index_html.name, &fsfile);
 					} else {
 						// check if we have requested file
 						if(!fs_open((const char *)&uip_appdata[4], &fsfile)){
-							printf("## Error: file not found!\n");
-							//return;
+							printf("file not found!\n");
 							fs_open(file_404_html.name, &fsfile);
 						}
 					}
-					//printf("%d.uip_send.\n", __LINE__);
+
 					hs->state = STATE_FILE_REQUEST;
 					hs->dataptr = (u8_t *)fsfile.data;
 					hs->upload = fsfile.len;
 
 					// send first (and maybe the last) chunk of data
-					//printf("%d.uip_send.\n", __LINE__);
 					uip_send(hs->dataptr, (hs->upload > uip_mss() ? uip_mss() : hs->upload));
 					return;
 
@@ -427,7 +356,7 @@ void httpd_appcall(void)
 					// Content-Length pos
 					start = (char *)strstr((char*)uip_appdata, "Content-Length:");
 
-					if (start){
+					if(start){
 
 						start += sizeof("Content-Length:");
 
@@ -442,14 +371,14 @@ void httpd_appcall(void)
 #endif
 
 						} else {
-							printf("## Error: couldn't find \"Content-Length\"!\n");
+							printf("couldn't find 'Content-Length'!\n");
 							httpd_state_reset();
 							uip_abort();
 							return;
 						}
 
 					} else {
-						printf("## Error: couldn't find \"Content-Length\"!\n");
+						printf("couldn't find 'Content-Length'!\n");
 						httpd_state_reset();
 						uip_abort();
 						return;
@@ -457,7 +386,7 @@ void httpd_appcall(void)
 
 					// we don't support very small files (< 10 KB)
 					if(hs->upload_total < 10240){
-						printf("## Error: request for upload < 10 KB data!\n");
+						printf("request for upload < 10 KB data!\n");
 						httpd_state_reset();
 						uip_abort();
 						return;
@@ -496,21 +425,21 @@ void httpd_appcall(void)
 #endif
 
 							} else {
-								printf("## Error: couldn't allocate memory for boundary!\n");
+								printf("couldn't allocate memory for boundary!\n");
 								httpd_state_reset();
 								uip_abort();
 								return;
 							}
 
 						} else {
-							printf("## Error: couldn't find boundary!\n");
+							printf("couldn't find boundary!\n");
 							httpd_state_reset();
 							uip_abort();
 							return;
 						}
 
 					} else {
-						printf("## Error: couldn't find boundary!\n");
+						printf("couldn't find boundary!\n");
 						httpd_state_reset();
 						uip_abort();
 						return;
@@ -523,16 +452,19 @@ void httpd_appcall(void)
 					 * We can now try to 'allocate memory' and
 					 * find beginning of the data in first packet
 					 */
-					webfailsafe_data_pointer = (u8_t *)WEBFAILSAFE_UPLOAD_RAM_ADDRESS;
+
+					webfailsafe_data_pointer = (u8_t *)CONFIG_LOADADDR;
 
 					if(!webfailsafe_data_pointer){
-						printf("## Error: couldn't allocate RAM for data!\n");
+						printf("couldn't allocate RAM for data!\n");
 						httpd_state_reset();
 						uip_abort();
 						return;
 					} else {
-						printf("Data will be downloaded at 0x%X in RAM\n", WEBFAILSAFE_UPLOAD_RAM_ADDRESS);
+						printf("Data will be downloaded at 0x%X in RAM\n", CONFIG_LOADADDR);
 					}
+
+					memset((void *)webfailsafe_data_pointer, 0xFF, CONFIG_MAX_UBOOT_SIZE);
 
 					if(httpd_findandstore_firstchunk()){
 						data_start_found = 1;
@@ -599,7 +531,7 @@ void httpd_appcall(void)
 
 			// if we got new data frome remote host
 			if(uip_newdata()){
-				//printf("%d.uip_newdata().\n");
+
 				// if we are in STATE_UPLOAD_REQUEST state
 				if(hs->state == STATE_UPLOAD_REQUEST){
 
@@ -610,7 +542,7 @@ void httpd_appcall(void)
 					if(!data_start_found){
 
 						if(!httpd_findandstore_firstchunk()){
-							printf("## Error: couldn't find start of data in next packet!\n");
+							printf("couldn't find start of data in next packet!\n");
 							httpd_state_reset();
 							uip_abort();
 							return;
@@ -633,26 +565,11 @@ void httpd_appcall(void)
 					// if we have collected all data
 					if(hs->upload >= hs->upload_total){
 
-						printf("\n\ndone!\n");
-
-						//LED_STATUS(GPIO_MESH_LED, LED_OFF);
+						printf("\n\n");
 
 						// end of post upload
 						webfailsafe_post_done = 1;
-
-						// post upload completed?
-						if(webfailsafe_post_done){
-
-							if(!webfailsafe_upload_failed){
-								webfailsafe_ready_for_upgrade = 1;
-							}
-
-							webfailsafe_post_done = 0;
-							webfailsafe_upload_failed = 0;
-						}
-						
 						NetBootFileXferSize = (ulong)hs->upload_total;
-						printf("NetBootFileXferSize = %d\n", NetBootFileXferSize);
 
 						// which website will be returned
 						if(!webfailsafe_upload_failed){
@@ -679,11 +596,7 @@ void httpd_appcall(void)
 
 		default:
 			// we shouldn't get here... we are listening only on port 80
-			printf("default..\n");
 			uip_abort();
 			break;
 	}
-#endif
-
 }
-

@@ -31,13 +31,14 @@
 #if defined(CONFIG_CMD_HTTPD)
 int do_httpd(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 {
-	return HttpdLoop();
+	return NetLoopHttpd();
 }
 
 U_BOOT_CMD(httpd, 1, 1, do_httpd,
 	   "start web server for firmware recovery\n",
 	   NULL);
 #endif /* CONFIG_CMD_HTTPD */
+
 
 static int netboot_common(enum proto_t, cmd_tbl_t *, int, char * const []);
 

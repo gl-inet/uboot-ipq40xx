@@ -8,6 +8,8 @@
 #include <command.h>
 #include <net.h>
 #include <asm/byteorder.h>
+
+#if defined(CONFIG_CMD_HTTPD)
 #include "httpd.h"
 
 #include "../httpd/uipopt.h"
@@ -15,56 +17,28 @@
 #include "../httpd/uip_arp.h"
 #include "gl_config.h"
 
-#define BUF ((struct uip_eth_hdr *)&uip_buf[0])
-char *str = "hello";
-//#include <gpio.h>
-//#include <spi_api.h>
-
 static int arptimer = 0;
-static int  HttpdTimeoutCountMax = 3;
-static int HttpdTimeoutCount = 0;
-static ulong HttpdTimeoutMSecs = 1000;
-extern int	webfailsafe_is_running;
 
-void HttpdHandler( void )
-{
+void HttpdHandler(void){
 	int i;
-	
-	if ( uip_len == 0 ) {
-		for ( i = 0; i < UIP_CONNS; i++ ) {
-			uip_periodic( i );
-			if ( uip_len > 0 ) {
-				uip_arp_out();
-				NetSendHttpd();
-			}
-		}
 
-		if ( ++arptimer == 20 ) {
-			uip_arp_timer();
-			arptimer = 0;
-		}
-	} else {
-		//printf("uip_len = %d\n", uip_len);
-		if ( BUF->type == htons( UIP_ETHTYPE_IP ) ) {
-			uip_arp_ipin();
-			uip_input();
-			if ( uip_len > 0 ) {
-				uip_arp_out();
-				NetSendHttpd();
-			}
-		} else if ( BUF->type == htons( UIP_ETHTYPE_ARP ) ) {
-			uip_arp_arpin();
-			if ( uip_len > 0 ) {
-				NetSendHttpd();
-			}
+	for(i = 0; i < UIP_CONNS; i++){
+		uip_periodic(i);
+
+		if(uip_len > 0){
+			uip_arp_out();
+			NetSendHttpd();
 		}
 	}
 
+	if(++arptimer == 20){
+		uip_arp_timer();
+		arptimer = 0;
+	}
 }
 
 // start http daemon
-void HttpdStart( void )
-{
+void HttpdStart(void){
 	uip_init();
 	httpd_init();
 }
@@ -72,18 +46,6 @@ void HttpdStart( void )
 int do_http_upgrade( const ulong size, const int upgrade_type )
 {
 	char cmd[128] = {0};
-	int encrypt_update = 1;//enalbe
-#ifdef CONFIG_RSA
-	const char *s = getenv("rsa");
-	printf("s = %s\n", s);
-	if ( s != NULL ) {
-		if (strcmp(s, "disable") == 0) {
-			encrypt_update = 0;
-		} else {
-			encrypt_update = 1;
-		}
-	}
-#endif
 
 	if ( upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_UBOOT ) {
 		printf( "\n\n****************************\n*     U-BOOT UPGRADING     *\n* DO NOT POWER OFF DEVICE! *\n****************************\n\n" );
@@ -122,23 +84,22 @@ int do_http_upgrade( const ulong size, const int upgrade_type )
 }
 
 // info about current progress of failsafe mode
-int do_http_progress( const int state )
-{
+int do_http_progress(const int state){
 	unsigned char i = 0;
 
 	/* toggle LED's here */
-	switch ( state ) {
+	switch(state){
 		case WEBFAILSAFE_PROGRESS_START:
 
 			// blink LED fast 10 times
-			for ( i = 0; i < 10; ++i ) {
-				/* LEDON(); */
-				udelay( 25000 );
-				/* LEDOFF(); */
-				udelay( 25000 );
+			for(i = 0; i < 10; ++i){
+				//all_led_on();
+				udelay(25000);
+				//all_led_off();
+				udelay(25000);
 			}
 
-			printf( "HTTP server is ready!\n\n" );
+			printf("HTTP server is ready!\n\n");
 			break;
 
 		case WEBFAILSAFE_PROGRESS_TIMEOUT:
@@ -146,45 +107,30 @@ int do_http_progress( const int state )
 			break;
 
 		case WEBFAILSAFE_PROGRESS_UPLOAD_READY:
-
-			// blink LED fast 10 times
-			for ( i = 0; i < 10; ++i ) {
-				/* LEDON(); */
-				udelay( 25000 );
-				/* LEDOFF(); */
-				udelay( 25000 );
-			}
-			printf( "HTTP upload is done! Upgrading...\n" );
+			printf("HTTP upload is done! Upgrading...\n");
 			break;
 
 		case WEBFAILSAFE_PROGRESS_UPGRADE_READY:
-
-			// blink LED fast 10 times
-			for ( i = 0; i < 10; ++i ) {
-				/* LEDON(); */
-				udelay( 25000 );
-				/* LEDOFF(); */
-				udelay( 25000 );
-			}
-			printf( "HTTP ugrade is done! Rebooting...\n\n" );
+			printf("HTTP ugrade is done! Rebooting...\n\n");
 			break;
 
 		case WEBFAILSAFE_PROGRESS_UPGRADE_FAILED:
-			printf( "## Error: HTTP ugrade failed!\n\n" );
+			printf("HTTP ugrade failed!\n\n");
 
 			// blink LED fast for 4 sec
-			for ( i = 0; i < 80; ++i ) {
-				/* LEDON(); */
-				udelay( 25000 );
-				/* LEDOFF(); */
-				udelay( 25000 );
+			for(i = 0; i < 80; ++i){
+				//all_led_on();
+				udelay(25000);
+				//all_led_off();
+				udelay(25000);
 			}
 
 			// wait 1 sec
-			udelay( 1000000 );
+			udelay(1000000);
 
 			break;
 	}
 
-	return( 0 );
+	return(0);
 }
+#endif /* CONFIG_CMD_HTTPD */
