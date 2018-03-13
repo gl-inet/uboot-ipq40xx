@@ -329,9 +329,9 @@ typedef struct {
 	"uboot_name="CONFIG_UBOOT_NAME"\0" \
 	"openwrt_fw_name="CONFIG_OPENWRT_FW_NAME"\0" \
 	"qsdk_fw_name="CONFIG_QSDK_FW_NAME"\0" \
-	"lu=if ping $serverip; then tftpboot $loadaddr $uboot_name; sf probe && sf erase "MK_STR(CONFIG_UBOOT_START)" "MK_STR(CONFIG_UBOOT_SIZE)" && sf write $loadaddr "MK_STR(CONFIG_UBOOT_START)" $filesize; fi\0" \
-	"lf=if ping $serverip; then tftpboot $loadaddr $openwrt_fw_name; sf probe && sf erase "MK_STR(CONFIG_FIRMWARE_START)" "MK_STR(CONFIG_FIRMWARE_SIZE)" && sf write $loadaddr "MK_STR(CONFIG_FIRMWARE_START)" $filesize; fi\0" \
-	"lfq=if ping $serverip; then tftpboot $loadaddr $qsdk_fw_name; imgaddr=$loadaddr && source $imgaddr:script; fi\0"
+	"lu=if ping $serverip; then tftpboot $loadaddr $uboot_name && sf probe && sf erase "MK_STR(CONFIG_UBOOT_START)" "MK_STR(CONFIG_UBOOT_SIZE)" && sf write $loadaddr "MK_STR(CONFIG_UBOOT_START)" $filesize; fi\0" \
+	"lf=if ping $serverip; then tftpboot $loadaddr $openwrt_fw_name && sf probe && sf erase "MK_STR(CONFIG_FIRMWARE_START)" "MK_STR(CONFIG_FIRMWARE_SIZE)" && sf write $loadaddr "MK_STR(CONFIG_FIRMWARE_START)" $filesize; fi\0" \
+	"lfq=if ping $serverip; then tftpboot $loadaddr $qsdk_fw_name && imgaddr=$loadaddr && source $imgaddr:script; fi\0"
 	
 
 
