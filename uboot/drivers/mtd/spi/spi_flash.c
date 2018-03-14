@@ -31,6 +31,7 @@ static int flash_cmdsz(struct spi_flash *flash)
 	return 1 + flash->addr_width;
 }
 
+unsigned int gl_wirte_count = 0;
 static int spi_flash_read_write(struct spi_slave *spi,
 				const u8 *cmd, size_t cmd_len,
 				const u8 *data_out, u8 *data_in,
@@ -38,6 +39,12 @@ static int spi_flash_read_write(struct spi_slave *spi,
 {
 	unsigned long flags = SPI_XFER_BEGIN;
 	int ret;
+
+	if ((gl_wirte_count % 500) == 0) {
+		write_flash_led_twinkle();
+		gl_wirte_count = 0;
+	}
+	gl_wirte_count++;
 
 	if (data_len == 0)
 		flags |= SPI_XFER_END;
@@ -265,6 +272,9 @@ static int spi_flash_cmd_erase_block_or_sector(struct spi_flash *flash, u8 erase
 	end = start + len;
 
 	while (offset < end) {
+		
+		erase_flash_led_twinkle();
+		
 		spi_flash_addr(flash, offset, cmd);
 		offset += erase_size;
 

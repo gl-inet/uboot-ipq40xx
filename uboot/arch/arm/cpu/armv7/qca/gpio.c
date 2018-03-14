@@ -177,6 +177,11 @@ void download_led_twinkle()
 		qca_configure_gpio(gpio, gboard_param->sw_gpio_count);
 	}*/
 	unsigned int val;
+
+	if ( readl(GPIO_IN_OUT_ADDR(2)) != 0 ) {
+		writel(GPIO_IN, GPIO_IN_OUT_ADDR(2));//wifi
+	}
+		
 	switch (gboard_param->machid) {
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_S1:
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
@@ -209,6 +214,98 @@ void download_led_twinkle()
 		break;
 	}
 }
+
+void erase_flash_led_twinkle()
+{
+	u32 status;
+	/*gpio_func_data_t *gpio;
+	gpio = gboard_param->sw_gpio;
+	if (gpio) {
+		qca_configure_gpio(gpio, gboard_param->sw_gpio_count);
+	}*/
+	unsigned int val;
+
+	if ( readl(GPIO_IN_OUT_ADDR(3)) != 0 ) {
+		writel(GPIO_IN, GPIO_IN_OUT_ADDR(3));//mesh
+	}
+	
+	switch (gboard_param->machid) {
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_S1:
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+	case MACH_TYPE_IPQ40XX_AP_DK05_1_C1:
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+		val = readl(GPIO_IN_OUT_ADDR(2));
+		if ( val ) {
+			writel(GPIO_IN, GPIO_IN_OUT_ADDR(2));//wifi
+		} else {
+			writel(GPIO_OUT, GPIO_IN_OUT_ADDR(2));//wifi
+		}
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C4:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
+		break;
+	 case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
+		break;
+	 case MACH_TYPE_IPQ40XX_AP_DK06_1_C1:
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK07_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK07_1_C2:
+		break;
+	case MACH_TYPE_IPQ40XX_DB_DK01_1_C1:
+	case MACH_TYPE_IPQ40XX_DB_DK02_1_C1:
+		break;
+	default:
+		break;
+	}
+}
+
+void write_flash_led_twinkle()
+{
+	u32 status;
+	/*gpio_func_data_t *gpio;
+	gpio = gboard_param->sw_gpio;
+	if (gpio) {
+		qca_configure_gpio(gpio, gboard_param->sw_gpio_count);
+	}*/
+	unsigned int val;
+	switch (gboard_param->machid) {
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_S1:
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+	case MACH_TYPE_IPQ40XX_AP_DK05_1_C1:
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+		val = readl(GPIO_IN_OUT_ADDR(2));
+		if ( val ) {
+			writel(GPIO_IN, GPIO_IN_OUT_ADDR(3));
+			writel(GPIO_IN, GPIO_IN_OUT_ADDR(2));//wifi
+		} else {
+			writel(GPIO_OUT, GPIO_IN_OUT_ADDR(2));//wifi
+			writel(GPIO_OUT, GPIO_IN_OUT_ADDR(3));
+		}
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C4:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
+		break;
+	 case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
+		break;
+	 case MACH_TYPE_IPQ40XX_AP_DK06_1_C1:
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK07_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK07_1_C2:
+		break;
+	case MACH_TYPE_IPQ40XX_DB_DK01_1_C1:
+	case MACH_TYPE_IPQ40XX_DB_DK02_1_C1:
+		break;
+	default:
+		break;
+	}
+}
+
 
 void power_led_on()
 {
