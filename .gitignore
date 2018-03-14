@@ -43,6 +43,7 @@ host_util/lzma/lzma
 /u-boot/tools/environment.c
 /u-boot/tools/envcrc
 /u-boot/tools/mkimage
+/uboot/httpd/fsdata.c
 
 # Auto generated fsdata.c
 /u-boot/httpd/fsdata.c
