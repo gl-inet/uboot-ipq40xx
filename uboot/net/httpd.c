@@ -42,42 +42,44 @@ void HttpdStart(void){
 	uip_init();
 	httpd_init();
 }
+extern int do_checkout_firmware(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
+extern int do_burning_qsdk(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
+extern int do_burning_lede(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
+
 
 int do_http_upgrade( const ulong size, const int upgrade_type )
 {
 	char cmd[128] = {0};
+	int ret = -1;
 
 	if ( upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_UBOOT ) {
 		printf( "\n\n****************************\n*     U-BOOT UPGRADING     *\n* DO NOT POWER OFF DEVICE! *\n****************************\n\n" );
 
 		sprintf(cmd, "sf probe && sf erase 0x%x 0x%x && sf write 0x84000000 0x%x 0x%x", 
 			CONFIG_UBOOT_START, CONFIG_UBOOT_SIZE, CONFIG_UBOOT_START, size);
-		run_command(cmd, 0);
-		return 0;
+
+		return run_command(cmd, 0);
 
 	} else if ( upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE ) {
 
 		printf( "\n\n****************************\n*    FIRMWARE UPGRADING    *\n* DO NOT POWER OFF DEVICE! *\n****************************\n\n" );
-		sprintf(cmd, "sf probe && sf erase 0x%x 0x%x && sf write 0x84000000 0x%x 0x%x",
+
+		if ( do_checkout_firmware(NULL, 0, 0, NULL) ) {
+			sprintf(cmd, "sf probe && sf erase 0x%x 0x%x && sf write 0x84000000 0x%x 0x%x",
 				CONFIG_FIRMWARE_START, CONFIG_FIRMWARE_SIZE, CONFIG_FIRMWARE_START, size);
-		run_command(cmd, 0);
-		return 0;
+		} else {
+			sprintf(cmd, "imgaddr=0x84000000 && source $imgaddr:script");
+		}
+		return run_command(cmd, 0);
 		
 	} else if ( upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_ART ) {
 
 		printf( "\n\n****************************\n*      ART  UPGRADING      *\n* DO NOT POWER OFF DEVICE! *\n****************************\n\n" );
 		sprintf(cmd, "sf probe && sf erase 0x170000 0x10000 && sf write 0x84000000 0x170000 0x10000");
-		run_command(cmd, 0);
-		return 0;
 
-	} else if ( upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_QSDK_FIRMWARE ) {
+		return run_command(cmd, 0);
 
-		printf( "\n\n****************************\n*      FIRMWARE UPGRADING      *\n* DO NOT POWER OFF DEVICE! *\n****************************\n\n" );
-		sprintf(cmd, "imgaddr=0x84000000 && source $imgaddr:script");
-		run_command(cmd, 0);
-		return 0;
-
-	}else {
+	} else {
 		return(-1);
 	}
 	return(-1);
@@ -108,6 +110,12 @@ int do_http_progress(const int state){
 
 		case WEBFAILSAFE_PROGRESS_UPLOAD_READY:
 			printf("HTTP upload is done! Upgrading...\n");
+			char buf[20];
+			printf("Bytes transferred = %ld (%lx hex)\n",NetBootFileXferSize,NetBootFileXferSize);
+			sprintf(buf, "%lX", NetBootFileXferSize);
+			setenv("filesize", buf);
+			sprintf(buf, "%lX", (unsigned long)load_addr);
+			setenv("fileaddr", buf);
 			break;
 
 		case WEBFAILSAFE_PROGRESS_UPGRADE_READY:

@@ -335,3 +335,63 @@ U_BOOT_CMD(
 	"sf update addr offset len	- erase and write `len' bytes from memory\n"
 	"				  at `addr' to flash at `offset'"
 );
+
+/**
+*0 burning qsdk firmware. 1 burning lede firmware
+*/
+int do_checkout_firmware(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	volatile unsigned char *s = (volatile unsigned char *)0x84000084;
+	volatile unsigned char *c = (volatile unsigned char *)0x84000085;
+	volatile unsigned char *r = (volatile unsigned char *)0x84000086;
+	volatile unsigned char *i = (volatile unsigned char *)0x84000087;
+	volatile unsigned char *p = (volatile unsigned char *)0x84000088;
+	volatile unsigned char *t = (volatile unsigned char *)0x84000089;
+
+	if (*s==0x73 && *c==0x63 && *r==0x72 && *i==0x69 && *p==0x70 && *t==0x74 ) {
+		return 0;
+	}
+	
+	return 1;
+}
+
+int do_burning_qsdk(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	char cmd[128] = {0};
+	
+	printf("do_burning_qsdk\n");
+	sprintf(cmd, "imgaddr=0x84000000 && source $imgaddr:script");
+
+	return run_command(cmd, 0);
+}
+
+int do_burning_lede(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	char cmd[128] = {0};
+	
+	printf("do_burning_lede\n");
+	sprintf(cmd, "sf probe && sf erase 0x%x 0x%x && sf write 0x84000000 0x%x $filesize",
+		CONFIG_FIRMWARE_START, CONFIG_FIRMWARE_SIZE, CONFIG_FIRMWARE_START);
+
+	return run_command(cmd, 0);
+}
+
+
+U_BOOT_CMD(
+	checkfw,	CONFIG_SYS_MAXARGS,	0,	do_checkout_firmware,
+	"check is qsdk or lede firmware",
+	"[args..]"
+);
+
+U_BOOT_CMD(
+	burning_qsdk,	CONFIG_SYS_MAXARGS,	0,	do_burning_qsdk,
+	"burning qsdk tool",
+	"[args..]"
+);
+
+U_BOOT_CMD(
+	burning_lede,	CONFIG_SYS_MAXARGS,	0,	do_burning_lede,
+	"burning lede tool",
+	"[args..]"
+);
+

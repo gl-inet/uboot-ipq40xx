@@ -144,48 +144,6 @@ int do_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return expr;
 }
 
-/**
-*0 sucess. 1 failed
-*/
-#define CONFIG_SCRIPT_ADDR 0x84000084
-int do_checkout_firmware(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	volatile unsigned char *fw = (volatile unsigned char *)CONFIG_SCRIPT_ADDR;
-
-	unsigned char str[6] = {0};
-	strncpy(str, fw, 6);
-	if ( !strcmp(str, "script") ) {
-		return 0;
-		
-	} else {
-		return 1;
-	}
-	
-	return 1;
-}
-
-int do_burning_qsdk(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	char cmd[128] = {0};
-	
-	printf("do_burning_qsdk\n");
-	sprintf(cmd, "sf probe && imgaddr=0x84000000 && source $imgaddr:script");
-
-	return run_command(cmd, 0);
-}
-
-int do_burning_lede(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	char cmd[128] = {0};
-	
-	printf("do_burning_lede\n");
-	sprintf(cmd, "sf probe && sf erase 0x%x 0x%x && sf write 0x84000000 0x%x $filesize",
-		CONFIG_FIRMWARE_START, CONFIG_FIRMWARE_SIZE, CONFIG_FIRMWARE_START);
-
-	return run_command(cmd, 0);
-}
-
-
 U_BOOT_CMD(
 	test,	CONFIG_SYS_MAXARGS,	1,	do_test,
 	"minimal test like /bin/sh",
@@ -213,23 +171,3 @@ U_BOOT_CMD(
 	"do nothing, successfully",
 	NULL
 );
-
-U_BOOT_CMD(
-	checkfw,	CONFIG_SYS_MAXARGS,	1,	do_checkout_firmware,
-	"minimal test like /bin/sh",
-	"[args..]"
-);
-
-U_BOOT_CMD(
-	burning_qsdk,	CONFIG_SYS_MAXARGS,	1,	do_burning_qsdk,
-	"minimal test like /bin/sh",
-	"[args..]"
-);
-
-U_BOOT_CMD(
-	burning_lede,	CONFIG_SYS_MAXARGS,	1,	do_burning_lede,
-	"minimal test like /bin/sh",
-	"[args..]"
-);
-
-
