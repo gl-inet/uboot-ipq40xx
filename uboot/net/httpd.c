@@ -42,15 +42,11 @@ void HttpdStart(void){
 	uip_init();
 	httpd_init();
 }
+
 extern int do_checkout_firmware(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
-extern int do_burning_qsdk(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
-extern int do_burning_lede(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
-
-
 int do_http_upgrade( const ulong size, const int upgrade_type )
 {
 	char cmd[128] = {0};
-	int ret = -1;
 
 	if ( upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_UBOOT ) {
 		printf( "\n\n****************************\n*     U-BOOT UPGRADING     *\n* DO NOT POWER OFF DEVICE! *\n****************************\n\n" );
