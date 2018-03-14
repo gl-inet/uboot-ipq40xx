@@ -95,6 +95,8 @@ void gpio_set_value(unsigned int gpio, unsigned int out);
 
 void all_led_on();
 void all_led_off();
+void download_led_twinkle();
+
 
 
 #endif

@@ -110,6 +110,10 @@
 #include "../httpd/uip_arp.h"
 #include "gl_config.h"
 #endif
+
+#include <asm/arch-qcom-common/gpio.h>
+
+
 DECLARE_GLOBAL_DATA_PTR;
 
 /** BOOTP EXTENTIONS **/
@@ -1553,6 +1557,8 @@ int NetLoopHttpd(void){
 		NetArpWaitTxPacketSize = 0;
 	}
 
+	NetBootFileXferSize = 0;
+
 	// restart label
 	restart:
 
@@ -1633,34 +1639,8 @@ int NetLoopHttpd(void){
 
 	webfailsafe_is_running = 1;
 
-	int led_off = 0;
-	int cnt_up = 1;
-	int cnt = 0;
-
 	// infinite loop
 	for(;;){
-		//if (cnt == led_off)
-			//all_led_off();
-		//else if (cnt == 0)
-			//all_led_on();
-
-		cnt++;
-
-		if (cnt == 1024) {
-			cnt = 0;
-
-			if (cnt_up) {
-				led_off++;
-
-				if (led_off == 1024)
-					cnt_up = 0;
-			} else {
-				led_off--;
-
-				if (led_off == 0)
-					cnt_up = 1;
-			}
-		}
 
 		/*
 		 *	Check the ethernet for a new packet.

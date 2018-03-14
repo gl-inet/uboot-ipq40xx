@@ -66,10 +66,17 @@ static int atoi(const char *s){
 }
 
 // print downloading progress
+static unsigned char post_line_counter = 0;
 static void httpd_download_progress(void){
 	if(post_packet_counter == 39){
 		puts("\n         ");
 		post_packet_counter = 0;
+		post_line_counter++;
+	}
+	
+	if (post_line_counter == 6) {
+		post_line_counter = 0;
+		download_led_twinkle();
 	}
 
 	puts("#");

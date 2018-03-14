@@ -250,6 +250,8 @@ static void show_block_marker(void)
 			putc('#');
 		else if ((TftpBlock % (10 * HASHES_PER_LINE)) == 0)
 			puts("\n\t ");
+		else if ((TftpBlock % (10 * 20)) == 0)
+			download_led_twinkle();
 	}
 }
 
