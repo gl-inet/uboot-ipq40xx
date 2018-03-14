@@ -17,6 +17,9 @@
 #include "../httpd/uip_arp.h"
 #include "gl_config.h"
 
+#include <asm/arch-qcom-common/gpio.h>
+
+
 static int arptimer = 0;
 
 void HttpdHandler(void){
@@ -64,7 +67,7 @@ int do_http_upgrade( const ulong size, const int upgrade_type )
 			sprintf(cmd, "sf probe && sf erase 0x%x 0x%x && sf write 0x84000000 0x%x 0x%x",
 				CONFIG_FIRMWARE_START, CONFIG_FIRMWARE_SIZE, CONFIG_FIRMWARE_START, size);
 		} else {
-			sprintf(cmd, "imgaddr=0x84000000 && source $imgaddr:script");
+			sprintf(cmd, "sf probe && imgaddr=0x84000000 && source $imgaddr:script");
 		}
 		return run_command(cmd, 0);
 		
@@ -90,12 +93,12 @@ int do_http_progress(const int state){
 		case WEBFAILSAFE_PROGRESS_START:
 
 			// blink LED fast 10 times
-			for(i = 0; i < 10; ++i){
-				//all_led_on();
+			/*for(i = 0; i < 10; ++i){
+				all_led_on();
 				udelay(25000);
-				//all_led_off();
+				all_led_off();
 				udelay(25000);
-			}
+			}*/
 
 			printf("HTTP server is ready!\n\n");
 			break;
@@ -122,12 +125,12 @@ int do_http_progress(const int state){
 			printf("HTTP ugrade failed!\n\n");
 
 			// blink LED fast for 4 sec
-			for(i = 0; i < 80; ++i){
-				//all_led_on();
+			/*for(i = 0; i < 80; ++i){
+				all_led_on();
 				udelay(25000);
-				//all_led_off();
+				all_led_off();
 				udelay(25000);
-			}
+			}*/
 
 			// wait 1 sec
 			udelay(1000000);
