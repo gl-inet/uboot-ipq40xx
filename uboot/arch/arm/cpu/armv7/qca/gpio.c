@@ -208,8 +208,44 @@ void download_led_twinkle()
 	default:
 		break;
 	}
-	
-
 }
+
+void power_led_on()
+{
+	u32 status;
+	/*gpio_func_data_t *gpio;
+	gpio = gboard_param->sw_gpio;
+	if (gpio) {
+		qca_configure_gpio(gpio, gboard_param->sw_gpio_count);
+	}*/
+	switch (gboard_param->machid) {
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_S1:
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+	case MACH_TYPE_IPQ40XX_AP_DK05_1_C1:
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(4));
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C4:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
+		break;
+	 case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
+		break;
+	 case MACH_TYPE_IPQ40XX_AP_DK06_1_C1:
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK07_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK07_1_C2:
+		break;
+	case MACH_TYPE_IPQ40XX_DB_DK01_1_C1:
+	case MACH_TYPE_IPQ40XX_DB_DK02_1_C1:
+		break;
+	default:
+		break;
+	}
+}
+
+
 
 

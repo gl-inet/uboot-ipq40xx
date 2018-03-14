@@ -677,7 +677,9 @@ void board_init_r(gd_t *id, ulong dest_addr)
 	}
 #endif
 
-	all_led_on();
+	all_led_off();
+	power_led_on();
+
 
 	/* main_loop() can return to retry autoboot, if so just run it again. */
 	for (;;) {
