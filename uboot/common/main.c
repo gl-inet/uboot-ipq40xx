@@ -43,6 +43,9 @@
 #include <linux/ctype.h>
 #include <menu.h>
 
+#include <asm/arch-qcom-common/gpio.h>
+
+
 #if defined(CONFIG_SILENT_CONSOLE) || defined(CONFIG_POST) || \
 	defined(CONFIG_CMDLINE_EDITING) || defined(CONFIG_IPQ_ETH_INIT_DEFER)
 DECLARE_GLOBAL_DATA_PTR;
@@ -383,6 +386,62 @@ void main_loop (void)
 		s = getenv ("bootcmd");
 
 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
+
+/*http download */
+
+		
+	//printf("gpio status = %d, %s\n", get_gpio_status(), getenv("serverip"));
+	int counter = 0;
+	int trycount = 3;
+	if ( get_gpio_status() == 0 ) {
+		/* eth_initialize(gd->bd); */
+		puts("\nNet:   ");
+		eth_initialize(gd->bd);
+		gd->flags &= ~GD_FLG_SILENT;
+		
+		printf( "\nPress press WPS button for more than 5 seconds to run web failsafe mode\n\n" );
+		printf( "WPS button is pressed for: %2d second(s)", counter);
+	}
+	while ( get_gpio_status() == 0 ) {
+		all_led_on();
+		udelay( 200000 );
+		all_led_off();
+		udelay( 800000 );
+		counter++;
+		printf("\b\b\b\b\b\b\b\b\b\b\b\b%2d second(s)", counter);
+
+		if ( counter >= 5 ) {
+			break;
+		} 
+
+		//if ( ctrlc() ) {
+		//	goto mainloop:
+		//}
+	}
+
+	if ( counter > 4 ) {
+		printf( "\n\nWPS button was pressed for %d seconds\nHTTP server is starting for firmware update...\n\n", counter );
+		all_led_on();
+
+		int argc = 2;
+		char *argv[2];
+		argv[0] = "2";
+		//argv[1] = "192.168.1.2";
+		argv[1] = getenv("serverip");
+	
+		while ( trycount-- ) {
+			if ( !do_ping(NULL, 0, argc, argv) ) {
+				NetLoopHttpd();	
+			}
+			udelay( 1000000 );
+		}
+
+		
+	} else if ((counter <= 4) && (counter > 0)) {
+		printf( "\n\nCatution: WPS button wasn't pressed or not long enough!\nContinuing normal boot...\n\n" );
+	} else {
+	}
+/********************************************************************************************/
 
 	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
 # ifdef CONFIG_AUTOBOOT_KEYED

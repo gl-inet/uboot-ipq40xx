@@ -1665,7 +1665,7 @@ int NetLoopHttpd(void){
 			//all_led_off();
 
 			printf("\nWeb failsafe mode aborted!\n\n");
-			return(-1);
+			do_reset(NULL, 0, 0, NULL);
 		}
 
 		// until upload is not completed, get back to the start of the loop
