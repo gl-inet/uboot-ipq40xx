@@ -279,6 +279,195 @@ int abortboot(int bootdelay)
 #endif	/* CONFIG_BOOTDELAY >= 0  */
 
 /****************************************************************************/
+#ifdef CONFIG_GL_CHECK_ART
+int find_calibration_data()
+{
+	int ret = -1;
+	volatile unsigned short *cal_2g_data = NULL;
+	volatile unsigned short *cal_5g_data = NULL;
+
+	char cmd[128] = {0};
+	sprintf(cmd, "sf probe && sf read 0x84000000 0x%x 0x%x", CONFIG_ART_START, CONFIG_ART_SIZE);
+	run_command(cmd, 0);
+
+	cal_2g_data = (volatile unsigned short *)(0x84000000+0x1000);
+	cal_5g_data = (volatile unsigned short *)(0x84000000+0x5000);
+
+	//printf("cal_2g_data = 0x%x, cal_5g_data = 0x%x\n", *cal_2g_data, *cal_5g_data);
+	printf("Checking calibration status...\n");
+
+	if (*cal_2g_data == 0x2f20 && *cal_5g_data == 0x2f20) {
+		printf("Device have calibrated,checking test status...\n");
+		ret = 0;
+	} else {
+		printf("Device haven't calibrated,booting the calibration firmware...\n");
+		ret = -1;
+	}
+	
+	return ret;
+}
+
+int check_test()
+{
+	int ret = 0;
+	volatile unsigned char *f1f = NULL;
+	volatile unsigned char *f2i = NULL;
+	volatile unsigned char *f3r = NULL;
+	volatile unsigned char *f4s = NULL;
+	volatile unsigned char *f5t = NULL;
+	volatile unsigned char *f6t = NULL;
+	volatile unsigned char *f7e = NULL;
+	volatile unsigned char *f8s = NULL;
+	volatile unsigned char *f9t = NULL;
+
+	volatile unsigned char *s0s = NULL;
+	volatile unsigned char *s1e = NULL;
+	volatile unsigned char *s2c = NULL;
+	volatile unsigned char *s3o = NULL;
+	volatile unsigned char *s4n = NULL;
+	volatile unsigned char *s5d = NULL;
+	volatile unsigned char *s6t = NULL;
+	volatile unsigned char *s7e = NULL;
+	volatile unsigned char *s8s = NULL;
+	volatile unsigned char *s9t = NULL;
+
+	char cmd[128] = {0};
+	sprintf(cmd, "sf read 0x84000000 0x%x 16 && sf read 0x84000010 0x%x 16",
+		(CONFIG_ART_START + 0x50), (CONFIG_ART_START + 0x60));
+	run_command(cmd, 0);
+
+	f1f = (volatile unsigned char *)0x84000000;
+	f2i = (volatile unsigned char *)0x84000001;
+	f3r = (volatile unsigned char *)0x84000002;
+	f4s = (volatile unsigned char *)0x84000003;
+	f5t = (volatile unsigned char *)0x84000004;
+	f6t = (volatile unsigned char *)0x84000005;
+	f7e = (volatile unsigned char *)0x84000006;
+	f8s = (volatile unsigned char *)0x84000007;
+	f9t = (volatile unsigned char *)0x84000008;
+
+	s0s = (volatile unsigned char *)0x84000010;
+	s1e = (volatile unsigned char *)0x84000011;
+	s2c = (volatile unsigned char *)0x84000012;
+	s3o = (volatile unsigned char *)0x84000013;
+	s4n = (volatile unsigned char *)0x84000014;
+	s5d = (volatile unsigned char *)0x84000015;
+	s6t = (volatile unsigned char *)0x84000016;
+	s7e = (volatile unsigned char *)0x84000017;
+	s8s = (volatile unsigned char *)0x84000018;
+	s9t = (volatile unsigned char *)0x84000019;
+
+	
+	if (*f1f==0x66 && *f2i==0x69 && *f3r==0x72 && *f4s==0x73 && \
+			*f5t==0x74 && *f6t==0x74 && *f7e==0x65 && *f8s==0x73 && \
+			*f9t==0x74 && \
+			*s0s==0x73 && *s1e==0x65 && *s2c==0x63 && *s3o==0x6f && \
+			*s4n==0x6e && *s5d==0x64 && *s6t==0x74 && *s7e==0x65 && \
+			*s8s==0x73 && *s9t==0x74) {
+		printf("Device haven tested, checking MAC info...\n");
+		ret = 0;
+	} else {
+		printf("Device haven't tested, please test device in calibration firmware...\n");
+		ret = -1;
+	}
+
+	return ret;
+
+}
+
+int check_config()
+{
+	int i = 0;
+	u8 addr[6];
+	u8 addr_tmp[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+	volatile unsigned char *tmp = NULL;
+
+	char cmd[128] = {0};
+	sprintf(cmd, "sf read 0x84000000 0x%x 16 && sf read 0x84000010 0x%x 16 && sf read 0x84000020 0x%x 16", 
+		CONFIG_ART_START, (CONFIG_ART_START+0x1000), (CONFIG_ART_START+0x5000));
+	run_command(cmd, 0);
+
+	/*check eth0 mac*/
+	for (i=0; i<6; i++) {
+		tmp = (volatile unsigned char *)0x84000000 + i;
+		addr[i] = *tmp;
+	}
+	//printf("eth0: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+	if (!memcmp(addr, addr_tmp, 6)) {
+		printf("Device don't have eth0 MAC info, please write MAC in calibration firmware...\n");
+		return -1;
+	}
+
+	/*check eth1 mac*/
+	for (i=0; i<6; i++) {
+		tmp = (volatile unsigned char *)0x84000006 + i;
+		addr[i] = *tmp;
+	}
+	//printf("eth1: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+	if (!memcmp(addr, addr_tmp, 6)) {
+		printf("Device don't have eth1 MAC info, please write MAC in calibration firmware...\n");
+		return -1;
+	}
+
+	/*check 2G mac*/
+	for (i=0; i<6; i++) {
+		tmp = (volatile unsigned char *)0x84000016 + i;
+		addr[i] = *tmp;
+	}
+	//printf("2G: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+	if (!memcmp(addr, addr_tmp, 6)) {
+		printf("Device don't have 2G MAC info, please write MAC in calibration firmware...\n");
+		return -1;
+	}
+
+	/*check 5G mac*/
+	for (i=0; i<6; i++) {
+		tmp = (volatile unsigned char *)0x84000026 + i;
+		addr[i] = *tmp;
+	}
+	//printf("5G: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+	if (!memcmp(addr, addr_tmp, 6)) {
+		printf("Device don't have 5G MAC info, please write MAC in calibration firmware...\n");
+		return -1;
+	}
+	printf("Device have MAC info, starting firmware...\n\n");
+	
+	return 0;
+}
+
+// we use this so that we can do without the ctype library
+#define is_digit(c)				((c) >= '0' && (c) <= '9')
+static int atoi(const char *s){
+	int i = 0;
+
+	while(is_digit(*s)){
+		i = i * 10 + *(s++) - '0';
+	}
+
+	return(i);
+}
+extern int TftpdownloadStatus;
+void auto_update_by_tftp()
+{
+	char cmd[128] = {0};
+
+	//if (check_network(3) != GL_OK) {
+		//printf("host no alive.\n");
+		//return -1;
+	//}
+
+	/*sprintf(cmd, "tftpboot 0x84000000 firmware.bin");
+	if ( !run_command(cmd, 0) ) {
+		sprintf(cmd, "%X", NetBootFileXferSize);
+		if ( !strcmp(cmd, getenv("filesize")) ) {
+			printf("tftp download ok.\n");
+		}
+	}*/
+	sprintf(cmd, "run lf");
+	run_command(cmd, 0);
+
+}
+#endif
 
 void main_loop (void)
 {
@@ -387,9 +576,7 @@ void main_loop (void)
 
 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
 
-/*http download */
-
-		
+/***********************http download **************************/
 	//printf("gpio status = %d, %s\n", get_gpio_status(), getenv("serverip"));
 	int counter = 0;
 	int trycount = 3;
@@ -444,6 +631,14 @@ void main_loop (void)
 /********************************************************************************************/
 
 	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
+#ifdef CONFIG_GL_CHECK_ART
+		if (!find_calibration_data()) {
+			if (/*!check_calibration() &&*/!check_test() && !check_config()) {
+				auto_update_by_tftp();
+				run_command("bootipq 0x84000000",0);//start standard fw
+			} 
+		}
+#endif
 # ifdef CONFIG_AUTOBOOT_KEYED
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
 # endif

@@ -204,6 +204,7 @@ static void netboot_update_env (void)
 #endif
 }
 
+int TftpdownloadStatus = 0;
 static int netboot_common(enum proto_t proto, cmd_tbl_t *cmdtp, int argc,
 		char * const argv[])
 {
@@ -260,6 +261,8 @@ static int netboot_common(enum proto_t proto, cmd_tbl_t *cmdtp, int argc,
 		bootstage_error(BOOTSTAGE_ID_NET_NETLOOP_OK);
 		return 1;
 	}
+	TftpdownloadStatus = 1;	//tftp download ok
+	
 	bootstage_mark(BOOTSTAGE_ID_NET_NETLOOP_OK);
 
 	/* NetLoop ok, update environment */
@@ -267,6 +270,7 @@ static int netboot_common(enum proto_t proto, cmd_tbl_t *cmdtp, int argc,
 
 	/* done if no file was loaded (no errors though) */
 	if (size == 0) {
+		TftpdownloadStatus = 0;
 		bootstage_error(BOOTSTAGE_ID_NET_LOADED);
 		return 0;
 	}

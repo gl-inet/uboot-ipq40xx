@@ -47,6 +47,7 @@
 #endif /* !DO_DEPS_ONLY */
 
 #define CONFIG_CMD_HTTPD
+#define CONFIG_GL_CHECK_ART
 
 #define CONFIG_IPQ40XX
 #define CONFIG_BOARD_EARLY_INIT_F
