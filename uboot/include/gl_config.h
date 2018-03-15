@@ -39,6 +39,4 @@
 
 #define CONFIG_MAX_UBOOT_SIZE ( 512 * 1024 )
 
-int rsa_verify(ulong filesize);
-
 #endif
