@@ -577,6 +577,7 @@ void main_loop (void)
 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
 
 /***********************http download **************************/
+#ifdef CONFIG_CMD_HTTPD
 	//printf("gpio status = %d, %s\n", get_gpio_status(), getenv("serverip"));
 	int counter = 0;
 	int trycount = 3;
@@ -597,16 +598,25 @@ void main_loop (void)
 		counter++;
 		printf("\b\b\b\b\b\b\b\b\b\b\b\b%2d second(s)", counter);
 
-		if ( counter >= 5 ) {
-			break;
-		} 
+		//if ( counter >= 5 ) {
+		//	break;
+		//} 
 
 		//if ( ctrlc() ) {
 		//	goto mainloop:
 		//}
 	}
 
-	if ( counter > 4 ) {
+	if ( counter > 20 ) {
+#ifdef CONFIG_RESET_DEFAULT_ENV
+		char cmd[16];
+		sprintf(cmd, "env default -f; env save");
+		run_command(cmd, 0);
+		udelay( 1000000 );
+		/* reset the board */
+		do_reset(NULL, 0, 0, NULL);
+#endif
+	} else if ( counter > 4 && counter < 20 ) {
 		printf( "\n\nWPS button was pressed for %d seconds\nHTTP server is starting for firmware update...\n\n", counter );
 		all_led_on();
 
@@ -628,6 +638,7 @@ void main_loop (void)
 		printf( "\n\nCatution: WPS button wasn't pressed or not long enough!\nContinuing normal boot...\n\n" );
 	} else {
 	}
+#endif
 /********************************************************************************************/
 
 	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
