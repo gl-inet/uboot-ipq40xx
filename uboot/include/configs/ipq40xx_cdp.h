@@ -326,6 +326,8 @@ typedef struct {
 #define CONFIG_LOADADDR 0x84000000
 #define CONFIG_UBOOT_NAME "openwrt-ipq40xx-u-boot-stripped.elf"
 #define CONFIG_FIRMWARE "firmware.bin"
+#define CONFIG_BOOTSTOPKEY	"gl"
+
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"loadaddr="MK_STR(CONFIG_LOADADDR)"\0" \
