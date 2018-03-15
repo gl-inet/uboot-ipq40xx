@@ -49,4 +49,5 @@ clean:
 clean_all:	clean
 	@echo Removing all binary images
 	@rm -f $(BUILD_TOPDIR)/bin/*.bin
+	@rm -f $(BUILD_TOPDIR)/bin/*.elf
 	@rm -f $(BUILD_TOPDIR)/bin/*.md5
