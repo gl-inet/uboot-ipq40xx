@@ -376,6 +376,76 @@ int do_burning_lede(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return run_command(cmd, 0);
 }
 
+void change_ethernet_mac()
+{
+	int i;
+	volatile unsigned char *addr = (volatile unsigned char *)0x84000100;
+	volatile unsigned char *src = (volatile unsigned char *)0x84000000;
+
+	for (i=0; i<64; i++) {
+		*addr++ = *src++;
+	}
+}
+
+void change_wifi_mac()
+{
+	int i;
+	u_int32_t sum = 0;
+	int checksum_2g = 0;
+	int checksum_5g = 0;
+	volatile unsigned char *wifi_2g = NULL;
+	volatile unsigned short *wifi_2g_checksum = NULL;
+	volatile unsigned char *wifi_5g = NULL;
+	volatile unsigned short *wifi_5g_checksum = NULL;
+	volatile unsigned char *src = (volatile unsigned char *)0x84000070;
+	volatile unsigned short *wifi_2g_art = NULL;
+	volatile unsigned short *wifi_5g_art = NULL;
+
+	wifi_2g = (volatile unsigned char *)0x84001106;
+	wifi_2g_checksum = (volatile unsigned short *)0x84001102;
+	wifi_5g = (volatile unsigned char *)0x84005106;
+	wifi_5g_checksum = (volatile unsigned short *)0x84005102;
+	wifi_2g_art = (volatile unsigned short *)0x84001100;
+	wifi_5g_art = (volatile unsigned short *)0x84005100;
+
+	for (i=0; i<12; i++) {
+		if (i<6)
+		 	*wifi_2g++ = *src++;
+		else
+			*wifi_5g++ = *src++;
+	}
+
+	printf("befour wifi_2g_checksum = %04x, wifi_5g_checksum = %04x\n", *wifi_2g_checksum, *wifi_5g_checksum);
+	*wifi_2g_checksum = *wifi_5g_checksum = -1;
+	printf("after wifi_2g_checksum = %04x, wifi_5g_checksum = %04x\n", *wifi_2g_checksum, *wifi_5g_checksum);
+	
+
+	for (i=0; i<12064; i+=2) {
+	   checksum_2g ^= *wifi_2g_art;
+	   checksum_5g ^= *wifi_5g_art;
+	   wifi_2g_art++;
+	   wifi_5g_art++;
+	}
+	*wifi_2g_checksum = checksum_2g;
+	*wifi_5g_checksum = checksum_5g;
+	printf("after wifi_2g_checksum = %04x\n", *wifi_2g_checksum);
+	printf("after wifi_5g_checksum = %04x\n", *wifi_5g_checksum);
+}
+
+int do_update_config(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	char cmd[128];
+	sprintf(cmd, "sf probe && sf read 0x84000100 0x%x 0x%x", CONFIG_ART_START, CONFIG_ART_SIZE);
+	run_command(cmd, 0);
+	
+	change_ethernet_mac();
+	change_wifi_mac();
+	
+	sprintf(cmd, "sf erase 0x%x 0x%x && sf write 0x84000100 0x%x 0x%x", 
+		CONFIG_ART_START, CONFIG_ART_SIZE, CONFIG_ART_START, CONFIG_ART_SIZE);
+	
+	return run_command(cmd, 0);
+}
 
 U_BOOT_CMD(
 	checkfw,	CONFIG_SYS_MAXARGS,	0,	do_checkout_firmware,
@@ -394,4 +464,11 @@ U_BOOT_CMD(
 	"burning lede tool",
 	"[args..]"
 );
+
+U_BOOT_CMD(
+	updateconfig,	CONFIG_SYS_MAXARGS,	0,	do_update_config,
+	"update config",
+	"[args..]"
+);
+
 
