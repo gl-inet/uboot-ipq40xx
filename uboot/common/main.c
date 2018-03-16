@@ -263,7 +263,9 @@ int abortboot(int bootdelay)
 	 * Use custom CONFIG_MENUPROMPT if bootstopkey
 	 * string contains nonprintable characters (e.g. ESC)
 	 */
+#ifdef CONFIG_DEBUG
 	envstopstr = NULL; //debug
+#endif
 	if (envstopstr)
 		printf("Hit \"%s\" key to stop booting: %2d", envstopstr, bootdelay);
 		//printf("Please input your password to stop booting: %2d", bootdelay);
