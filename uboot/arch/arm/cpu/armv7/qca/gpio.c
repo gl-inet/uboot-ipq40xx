@@ -114,6 +114,9 @@ void all_led_on()
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(52));//wifi
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(49));//mesh
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(48));//power
 		break;
 	 case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 		break;
@@ -152,6 +155,9 @@ void all_led_off()
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
+		writel(GPIO_IN, GPIO_IN_OUT_ADDR(52));//wifi
+		writel(GPIO_IN, GPIO_IN_OUT_ADDR(49));//mesh
+		writel(GPIO_IN, GPIO_IN_OUT_ADDR(48));//power
 		break;
 	 case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 		break;
@@ -177,10 +183,6 @@ void download_led_twinkle()
 		qca_configure_gpio(gpio, gboard_param->sw_gpio_count);
 	}*/
 	unsigned int val;
-
-	if ( readl(GPIO_IN_OUT_ADDR(2)) != 0 ) {
-		writel(GPIO_IN, GPIO_IN_OUT_ADDR(2));//wifi
-	}
 		
 	switch (gboard_param->machid) {
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_S1:
@@ -188,9 +190,13 @@ void download_led_twinkle()
 	case MACH_TYPE_IPQ40XX_AP_DK05_1_C1:
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+		if ( readl(GPIO_IN_OUT_ADDR(2)) != 0 ) {
+			writel(GPIO_IN, GPIO_IN_OUT_ADDR(2));//wifi
+		}
+
 		val = readl(GPIO_IN_OUT_ADDR(3));
 		if ( val ) {
-			writel(GPIO_IN, GPIO_IN_OUT_ADDR(3));
+			writel(GPIO_IN, GPIO_IN_OUT_ADDR(3));//mesh
 		} else {
 			writel(GPIO_OUT, GPIO_IN_OUT_ADDR(3));
 		}
@@ -199,6 +205,16 @@ void download_led_twinkle()
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
+		if ( readl(GPIO_IN_OUT_ADDR(52)) != 0 ) {
+			writel(GPIO_IN, GPIO_IN_OUT_ADDR(52));//wifi
+		}
+
+		val = readl(GPIO_IN_OUT_ADDR(49));
+		if ( val ) {
+			writel(GPIO_IN, GPIO_IN_OUT_ADDR(49));
+		} else {
+			writel(GPIO_OUT, GPIO_IN_OUT_ADDR(49));
+		}
 		break;
 	 case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 		break;
@@ -224,10 +240,6 @@ void erase_flash_led_twinkle()
 		qca_configure_gpio(gpio, gboard_param->sw_gpio_count);
 	}*/
 	unsigned int val;
-
-	if ( readl(GPIO_IN_OUT_ADDR(3)) != 0 ) {
-		writel(GPIO_IN, GPIO_IN_OUT_ADDR(3));//mesh
-	}
 	
 	switch (gboard_param->machid) {
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_S1:
@@ -235,6 +247,10 @@ void erase_flash_led_twinkle()
 	case MACH_TYPE_IPQ40XX_AP_DK05_1_C1:
 		break;
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+		if ( readl(GPIO_IN_OUT_ADDR(3)) != 0 ) {
+			writel(GPIO_IN, GPIO_IN_OUT_ADDR(3));//mesh
+		}
+
 		val = readl(GPIO_IN_OUT_ADDR(2));
 		if ( val ) {
 			writel(GPIO_IN, GPIO_IN_OUT_ADDR(2));//wifi
@@ -246,6 +262,16 @@ void erase_flash_led_twinkle()
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
+		if ( readl(GPIO_IN_OUT_ADDR(49)) != 0 ) {
+			writel(GPIO_IN, GPIO_IN_OUT_ADDR(49));//mesh
+		}
+
+		val = readl(GPIO_IN_OUT_ADDR(52));
+		if ( val ) {
+			writel(GPIO_IN, GPIO_IN_OUT_ADDR(52));//wifi
+		} else {
+			writel(GPIO_OUT, GPIO_IN_OUT_ADDR(52));//wifi
+		}
 		break;
 	 case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 		break;
@@ -290,6 +316,14 @@ void write_flash_led_twinkle()
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
+		val = readl(GPIO_IN_OUT_ADDR(52));
+		if ( val ) {
+			writel(GPIO_IN, GPIO_IN_OUT_ADDR(49));
+			writel(GPIO_IN, GPIO_IN_OUT_ADDR(52));//wifi
+		} else {
+			writel(GPIO_OUT, GPIO_IN_OUT_ADDR(52));//wifi
+			writel(GPIO_OUT, GPIO_IN_OUT_ADDR(49));
+		}
 		break;
 	 case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 		break;
@@ -327,6 +361,7 @@ void power_led_on()
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(48));//power
 		break;
 	 case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 		break;
@@ -363,6 +398,7 @@ u32 get_gpio_status()
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
+		status = readl(GPIO_IN_OUT_ADDR(18)); 
 		break;
 	 case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:
 		break;

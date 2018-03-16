@@ -608,7 +608,7 @@ int board_eth_init(bd_t *bis)
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
 		mdelay(1);
-		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(47));
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(40));
 		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
 		break;
 	 case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:

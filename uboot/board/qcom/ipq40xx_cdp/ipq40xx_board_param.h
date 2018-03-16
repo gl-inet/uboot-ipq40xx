@@ -749,9 +749,39 @@ gpio_func_data_t sw_gpio_bga[] = {
 		.gpio_pu_res = GPIO_PULL_RES2
 	},
 	{
-		.gpio = 47,
+		.gpio = 40,
 		.func = 0,
 		.pull = GPIO_PULL_DOWN,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 52, //wifi
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 49, //mesh
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 48, //power
+		.func = 0,
+		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_2MA,
 		.oe = GPIO_OE_ENABLE,
 		.gpio_vm = GPIO_VM_ENABLE,
