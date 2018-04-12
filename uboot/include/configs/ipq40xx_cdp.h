@@ -334,7 +334,7 @@ typedef struct {
 	"uboot_name="CONFIG_UBOOT_NAME"\0" \
 	"fw_name="CONFIG_FIRMWARE"\0" \
 	"lu=if ping $serverip; then tftpboot $loadaddr $uboot_name && sf probe && sf erase "MK_STR(CONFIG_UBOOT_START)" "MK_STR(CONFIG_UBOOT_SIZE)" && sf write $loadaddr "MK_STR(CONFIG_UBOOT_START)" $filesize; fi\0" \
-	"lf=if ping $serverip; then tftpboot $loadaddr $fw_name; fi; if checkfw; then burning_qsdk; else burning_lede; fi\0" \
+	"lf=if ping $serverip; then tftpboot $loadaddr $fw_name; if checkfw; then burning_qsdk; else burning_lede; fi; fi\0" \
 	"lc=if ping $serverip; then tftpboot $loadaddr config.bin && updateconfig; fi\0"
 
 
