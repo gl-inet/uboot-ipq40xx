@@ -513,22 +513,28 @@ extern int TftpdownloadStatus;
 void auto_update_by_tftp()
 {
 	char cmd[128] = {0};
+	int argc = 2;
+	char *argv[2];
+	argv[0] = "2";
+	argv[1] = getenv("serverip");
 
-	//if (check_network(3) != GL_OK) {
-		//printf("host no alive.\n");
-		//return -1;
-	//}
+	udelay( 1000000 );
+	if ( do_ping(NULL, 0, argc, argv) != 0) {
+		return;
+	}
 
-	/*sprintf(cmd, "tftpboot 0x84000000 firmware.bin");
-	if ( !run_command(cmd, 0) ) {
-		sprintf(cmd, "%X", NetBootFileXferSize);
-		if ( !strcmp(cmd, getenv("filesize")) ) {
-			printf("tftp download ok.\n");
-		}
-	}*/
-	sprintf(cmd, "run lf");
+	sprintf(cmd, "tftpboot 0x84000000 $fw_name");
+	if ( run_command(cmd, 0) != 0 ) {
+		return;
+	}
+
+	if ( do_checkout_firmware(NULL, 0, 0, NULL) ) {
+		sprintf(cmd, "sf probe && sf erase 0x%x 0x%x && sf write 0x84000000 0x%x $filesize",
+			CONFIG_FIRMWARE_START, CONFIG_FIRMWARE_SIZE, CONFIG_FIRMWARE_START);
+	} else {
+		sprintf(cmd, "sf probe && imgaddr=0x84000000 && source $imgaddr:script");
+	}
 	run_command(cmd, 0);
-
 }
 #endif
 

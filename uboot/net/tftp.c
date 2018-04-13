@@ -427,10 +427,16 @@ TftpSend(void)
 }
 
 #ifdef CONFIG_CMD_TFTPPUT
+#define CONFIG_TFTP_RESTART_COUNT 3
+static int TftpRestartCount = 0;
 static void icmp_handler(unsigned type, unsigned code, unsigned dest,
 			 IPaddr_t sip, unsigned src, uchar *pkt, unsigned len)
 {
 	if (type == ICMP_NOT_REACH && code == ICMP_NOT_REACH_PORT) {
+		if (++TftpRestartCount > CONFIG_TFTP_RESTART_COUNT) {
+			net_set_state(NETLOOP_FAIL);
+		}
+
 		/* Oh dear the other end has gone away */
 		restart("TFTP server died");
 	}
