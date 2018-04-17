@@ -660,16 +660,21 @@ void main_loop (void)
 		printf( "WPS button is pressed for: %2d second(s)", counter);
 	}
 	while ( get_gpio_status() == 0 ) {
-		all_led_on();
-		udelay( 200000 );
-		all_led_off();
-		udelay( 800000 );
+		if ( counter < 5 ) {
+			wifi_led_on();
+			udelay( 1000000 );
+			wifi_led_off();
+			udelay( 1000000 );
+		} else if ( counter == 5 ) {
+			wifi_led_off();
+			mesh_led_on();
+		} else {
+			udelay( 1000000 );
+		}
+	
 		counter++;
 		printf("\b\b\b\b\b\b\b\b\b\b\b\b%2d second(s)", counter);
 
-		//if ( counter >= 5 ) {
-		//	break;
-		//} 
 
 		//if ( ctrlc() ) {
 		//	goto mainloop:
@@ -687,7 +692,6 @@ void main_loop (void)
 #endif
 	} else if ( counter > 4 && counter < 20 ) {
 		printf( "\n\nWPS button was pressed for %d seconds\nHTTP server is starting for firmware update...\n\n", counter );
-		all_led_on();
 
 		int argc = 2;
 		char *argv[2];
