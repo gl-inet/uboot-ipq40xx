@@ -668,6 +668,7 @@ void main_loop (void)
 		} else if ( counter == 5 ) {
 			wifi_led_off();
 			mesh_led_on();
+			udelay( 1000000 );
 		} else {
 			udelay( 1000000 );
 		}
