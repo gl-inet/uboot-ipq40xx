@@ -93,9 +93,22 @@ void gpio_tlmm_config(unsigned int gpio, unsigned int func,
 
 void gpio_set_value(unsigned int gpio, unsigned int out);
 
-void all_led_on();
-void all_led_off();
-void download_led_twinkle();
+void all_led_on(void);
+void all_led_off(void);
+void download_led_twinkle(void);
+void wifi_led_on(void);
+void wifi_led_off(void);
+void mesh_led_on(void);
+void mesh_led_off(void);
+void download_led_twinkle(void);
+void erase_flash_led_twinkle(void);
+void write_flash_led_twinkle(void);
+void power_led_on(void);
+u32 get_gpio_status(void);
+
+
+
+
 
 
 

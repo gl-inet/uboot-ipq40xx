@@ -376,7 +376,7 @@ int do_burning_lede(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return run_command(cmd, 0);
 }
 
-void change_ethernet_mac()
+void change_ethernet_mac(void)
 {
 	int i;
 	volatile unsigned char *addr = (volatile unsigned char *)0x84000100;
@@ -387,10 +387,9 @@ void change_ethernet_mac()
 	}
 }
 
-void change_wifi_mac()
+void change_wifi_mac(void)
 {
 	int i;
-	u_int32_t sum = 0;
 	int checksum_2g = 0;
 	int checksum_5g = 0;
 	volatile unsigned char *wifi_2g = NULL;

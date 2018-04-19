@@ -310,23 +310,23 @@ ALL_CFLAGS = $(CFLAGS) $(CFLAGS_$(BCURDIR)/$(@F)) $(CFLAGS_$(BCURDIR))
 EXTRA_CPPFLAGS = $(CPPFLAGS_$(BCURDIR)/$(@F)) $(CPPFLAGS_$(BCURDIR))
 ALL_CFLAGS += $(EXTRA_CPPFLAGS)
 
-RED=\e[1;31;40m
-GRN=\e[1;32;40m
-YLW=\e[1;33;40m
-CYN=\e[1;36;40m
-NRM=\e[0m
+#RED=\e[1;31;40m
+#GRN=\e[1;32;40m
+#YLW=\e[1;33;40m
+#CYN=\e[1;36;40m
+#NRM=\e[0m
 
 ifeq ($(verbose),)
 define compile
-	echo -e "$(CYN)$(firstword $1)$(GRN) $(subst $(TOPDIR)/,,$(abspath $<))$(RED)"
+	#echo -e "$(CYN)$(firstword $1)$(GRN) $(subst $(TOPDIR)/,,$(abspath $<))$(RED)"
 	$1
-	echo -ne "$(NRM)"
+	#echo -ne "$(NRM)"
 endef
 else
 define compile
-	echo -e "$(CYN)$1$(RED)"
+	#echo -e "$(CYN)$1$(RED)"
 	$1
-	echo -ne "$(NRM)"
+	#echo -ne "$(NRM)"
 endef
 endif
 

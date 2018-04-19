@@ -45,6 +45,10 @@
 
 #include <asm/arch-qcom-common/gpio.h>
 
+#if defined(CONFIG_CMD_HTTPD)
+extern int NetLoopHttpd(void);
+#endif
+
 
 #if defined(CONFIG_SILENT_CONSOLE) || defined(CONFIG_POST) || \
 	defined(CONFIG_CMDLINE_EDITING) || defined(CONFIG_IPQ_ETH_INIT_DEFER)
@@ -343,7 +347,7 @@ int abortboot(int bootdelay)
 
 /****************************************************************************/
 #ifdef CONFIG_GL_CHECK_ART
-int find_calibration_data()
+int find_calibration_data(void)
 {
 	int ret = -1;
 	volatile unsigned short *cal_2g_data = NULL;
@@ -370,7 +374,7 @@ int find_calibration_data()
 	return ret;
 }
 
-int check_test()
+int check_test(void)
 {
 	int ret = 0;
 	volatile unsigned char *f1f = NULL;
@@ -438,7 +442,7 @@ int check_test()
 
 }
 
-int check_config()
+int check_config(void)
 {
 	int i = 0;
 	u8 addr[6];
@@ -500,7 +504,7 @@ int check_config()
 
 // we use this so that we can do without the ctype library
 #define is_digit(c)				((c) >= '0' && (c) <= '9')
-static int atoi(const char *s){
+/*static int atoi(const char *s){
 	int i = 0;
 
 	while(is_digit(*s)){
@@ -508,9 +512,11 @@ static int atoi(const char *s){
 	}
 
 	return(i);
-}
+}*/
 extern int TftpdownloadStatus;
-void auto_update_by_tftp()
+extern int do_ping (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
+extern int do_checkout_firmware(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
+void auto_update_by_tftp(void)
 {
 	char cmd[128] = {0};
 	int argc = 2;

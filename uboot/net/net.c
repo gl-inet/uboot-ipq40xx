@@ -103,11 +103,13 @@
 #include "sntp.h"
 #endif
 #include "tftp.h"
+#include "httpd.h"
 
 #if defined(CONFIG_CMD_HTTPD)
 #include "../httpd/uipopt.h"
 #include "../httpd/uip.h"
 #include "../httpd/uip_arp.h"
+#include "../httpd/httpd.h"
 #include "gl_config.h"
 #endif
 
@@ -222,6 +224,8 @@ extern IPaddr_t	NetArpWaitReplyIP;
 static int net_check_prereq(enum proto_t protocol);
 
 static int NetTryCount;
+
+void NetReceiveHttpd(volatile uchar * inpkt, int len);
 
 /**********************************************************************/
 
@@ -1614,8 +1618,8 @@ int NetLoopHttpd(void){
 	// start server...
 	IPaddr_t tmp_ip_addr = ntohl( bd->bi_ip_addr );
 	printf( "HTTP server is starting at IP: %ld.%ld.%ld.%ld\n", 
-		( tmp_ip_addr & 0xff000000 ) >> 24, ( tmp_ip_addr & 0x00ff0000 ) >> 16, 
-		( tmp_ip_addr & 0x0000ff00 ) >> 8, ( tmp_ip_addr & 0x000000ff ) );
+		(ulong)( tmp_ip_addr & 0xff000000 ) >> 24, (ulong)( tmp_ip_addr & 0x00ff0000 ) >> 16, 
+		(ulong)( tmp_ip_addr & 0x0000ff00 ) >> 8, (ulong)( tmp_ip_addr & 0x000000ff ) );
 
 	HttpdStart();
 

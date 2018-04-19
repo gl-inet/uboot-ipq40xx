@@ -21,7 +21,7 @@
 
 
 static int arptimer = 0;
-
+extern void NetSendHttpd(void);
 void HttpdHandler(void){
 	int i;
 
@@ -86,8 +86,6 @@ int do_http_upgrade( const ulong size, const int upgrade_type )
 
 // info about current progress of failsafe mode
 int do_http_progress(const int state){
-	unsigned char i = 0;
-
 	/* toggle LED's here */
 	switch(state){
 		case WEBFAILSAFE_PROGRESS_START:

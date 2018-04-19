@@ -338,9 +338,9 @@ typedef struct {
 	    "tftpboot $loadaddr $fw_name && " \
 		    "if checkfw; then " \
 		         "burning_qsdk; " \
-		     "else " \ 
-		         "burning_lede; " \ 
-		     "fi; " \ 
+		     "else " \
+		         "burning_lede; " \
+		     "fi; " \
     "fi\0" \
 	"lc=if ping $serverip; then tftpboot $loadaddr config.bin && updateconfig; fi\0"
 

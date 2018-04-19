@@ -92,9 +92,8 @@ void gpio_set_value(unsigned int gpio, unsigned int out)
 }
 
 extern board_ipq40xx_params_t *gboard_param;
-void all_led_on()
+void all_led_on(void)
 {
-	u32 status;
 	/*gpio_func_data_t *gpio;
 	gpio = gboard_param->sw_gpio;
 	if (gpio) {
@@ -133,9 +132,8 @@ void all_led_on()
 	}
 }
 
-void all_led_off()
+void all_led_off(void)
 {
-	u32 status;
 	/*gpio_func_data_t *gpio;
 	gpio = gboard_param->sw_gpio;
 	if (gpio) {
@@ -174,9 +172,8 @@ void all_led_off()
 	}
 }
 
-void mesh_led_on()
+void mesh_led_on(void)
 {
-	u32 status;
 	/*gpio_func_data_t *gpio;
 	gpio = gboard_param->sw_gpio;
 	if (gpio) {
@@ -215,9 +212,8 @@ void mesh_led_on()
 	}
 }
 
-void mesh_led_off()
+void mesh_led_off(void)
 {
-	u32 status;
 	/*gpio_func_data_t *gpio;
 	gpio = gboard_param->sw_gpio;
 	if (gpio) {
@@ -256,9 +252,8 @@ void mesh_led_off()
 	}
 }
 
-void wifi_led_on()
+void wifi_led_on(void)
 {
-	u32 status;
 	/*gpio_func_data_t *gpio;
 	gpio = gboard_param->sw_gpio;
 	if (gpio) {
@@ -297,9 +292,8 @@ void wifi_led_on()
 	}
 }
 
-void wifi_led_off()
+void wifi_led_off(void)
 {
-	u32 status;
 	/*gpio_func_data_t *gpio;
 	gpio = gboard_param->sw_gpio;
 	if (gpio) {
@@ -338,9 +332,8 @@ void wifi_led_off()
 	}
 }
 
-void download_led_twinkle()
+void download_led_twinkle(void)
 {
-	u32 status;
 	/*gpio_func_data_t *gpio;
 	gpio = gboard_param->sw_gpio;
 	if (gpio) {
@@ -395,9 +388,8 @@ void download_led_twinkle()
 	}
 }
 
-void erase_flash_led_twinkle()
+void erase_flash_led_twinkle(void)
 {
-	u32 status;
 	/*gpio_func_data_t *gpio;
 	gpio = gboard_param->sw_gpio;
 	if (gpio) {
@@ -452,9 +444,8 @@ void erase_flash_led_twinkle()
 	}
 }
 
-void write_flash_led_twinkle()
+void write_flash_led_twinkle(void)
 {
-	u32 status;
 	/*gpio_func_data_t *gpio;
 	gpio = gboard_param->sw_gpio;
 	if (gpio) {
@@ -505,9 +496,8 @@ void write_flash_led_twinkle()
 }
 
 
-void power_led_on()
+void power_led_on(void)
 {
-	u32 status;
 	/*gpio_func_data_t *gpio;
 	gpio = gboard_param->sw_gpio;
 	if (gpio) {
@@ -542,7 +532,7 @@ void power_led_on()
 	}
 }
 
-u32 get_gpio_status()
+u32 get_gpio_status(void)
 {
 	u32 status = -1;
 	/*gpio_func_data_t *gpio;

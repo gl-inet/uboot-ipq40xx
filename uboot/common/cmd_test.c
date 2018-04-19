@@ -23,6 +23,7 @@
 
 #include <common.h>
 #include <command.h>
+#include <asm/arch-qcom-common/gpio.h>
 
 int do_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {

@@ -13,6 +13,8 @@
 #include <spi_flash.h>
 #include <watchdog.h>
 
+#include <asm/arch-qcom-common/gpio.h>
+
 #include "spi_flash_internal.h"
 
 static void spi_flash_addr(struct spi_flash *flash, u32 addr, u8 *cmd)

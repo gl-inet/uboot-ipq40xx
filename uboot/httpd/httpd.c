@@ -4,6 +4,9 @@
 #include "fsdata.h"
 #include "gl_config.h"
 
+#include <asm/arch-qcom-common/gpio.h>
+
+
 #define STATE_NONE				0		// empty state (waiting for request...)
 #define STATE_FILE_REQUEST		1		// remote host sent GET request
 #define STATE_UPLOAD_REQUEST	2		// remote host sent POST request

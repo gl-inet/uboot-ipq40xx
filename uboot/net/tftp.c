@@ -15,6 +15,8 @@
 #include <flash.h>
 #endif
 
+#include <asm/arch-qcom-common/gpio.h>
+
 /* Well known TFTP port # */
 #define WELL_KNOWN_PORT	69
 /* Millisecs to timeout for lost pkt */

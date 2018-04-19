@@ -53,6 +53,9 @@
 #include <post.h>
 #include <logbuff.h>
 
+#include <asm/arch-qcom-common/gpio.h>
+
+
 #ifdef CONFIG_BITBANGMII
 #include <miiphy.h>
 #endif

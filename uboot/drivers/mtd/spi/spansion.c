@@ -151,6 +151,7 @@ static int spansion_erase(struct spi_flash *flash, u32 offset, size_t len)
 	return spi_flash_cmd_erase(flash, erase_opcode, offset, len);
 }
 
+extern int spi_flash_cmd_berase(struct spi_flash *flash, u8 erase_cmd);
 static int spansion_berase(struct spi_flash *flash)
 {
 	return spi_flash_cmd_berase(flash, CMD_S25FSXX_BE);
@@ -161,7 +162,6 @@ struct spi_flash *spi_flash_probe_spansion(struct spi_slave *spi, u8 *idcode)
 	const struct spansion_spi_flash_params *params;
 	struct spi_flash *flash;
 	unsigned int i;
-	int ret;
 	unsigned short jedec, ext_jedec;
 
 	jedec = idcode[1] << 8 | idcode[2];

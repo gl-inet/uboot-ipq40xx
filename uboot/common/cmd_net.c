@@ -29,14 +29,16 @@
 #include <net.h>
 
 #if defined(CONFIG_CMD_HTTPD)
-int do_httpd(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+extern int NetLoopHttpd(void);
+int do_httpd(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return NetLoopHttpd();
 }
 
 U_BOOT_CMD(httpd, 1, 1, do_httpd,
-	   "start web server for firmware recovery\n",
-	   NULL);
+	   "start web server for firmware recovery",
+	   "start web server for firmware recovery"
+);
 #endif /* CONFIG_CMD_HTTPD */
 
 
