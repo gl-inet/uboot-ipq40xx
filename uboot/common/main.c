@@ -542,6 +542,20 @@ void auto_update_by_tftp(void)
 	}
 	run_command(cmd, 0);
 }
+
+
+void uboot_env_restore(void)
+{
+	char *version = getenv("version");
+	if ( !version || strcmp(version, CONFIG_VERSION) ) {
+		char cmd[16];
+		sprintf(cmd, "env default -f; env save");
+		run_command(cmd, 0);
+		udelay( 1000000 );
+
+		do_reset(NULL, 0, 0, NULL);
+	}
+}
 #endif
 
 void main_loop (void)
@@ -725,6 +739,7 @@ void main_loop (void)
 	}
 #endif
 /********************************************************************************************/
+	uboot_env_restore();
 
 	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
 #ifdef CONFIG_GL_CHECK_ART

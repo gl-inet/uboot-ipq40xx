@@ -327,9 +327,12 @@ typedef struct {
 #define CONFIG_UBOOT_NAME "openwrt-ipq40xx-u-boot-stripped.elf"
 #define CONFIG_FIRMWARE "firmware.bin"
 #define CONFIG_BOOTSTOPKEY	"gl"
+#define CONFIG_VERSION	"20180419"
+
 //#define CONFIG_DEBUG
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
+	"version="CONFIG_VERSION"\0" \
 	"loadaddr="MK_STR(CONFIG_LOADADDR)"\0" \
 	"uboot_name="CONFIG_UBOOT_NAME"\0" \
 	"fw_name="CONFIG_FIRMWARE"\0" \
