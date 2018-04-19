@@ -675,6 +675,8 @@ void main_loop (void)
 			wifi_led_off();
 			mesh_led_on();
 			udelay( 1000000 );
+		} else if ( counter > 20 ) {
+			break;
 		} else {
 			udelay( 1000000 );
 		}
@@ -690,6 +692,9 @@ void main_loop (void)
 
 	if ( counter > 20 ) {
 #ifdef CONFIG_RESET_DEFAULT_ENV
+		all_led_on();
+		udelay( 1000000 );
+
 		char cmd[16];
 		sprintf(cmd, "env default -f; env save");
 		run_command(cmd, 0);
