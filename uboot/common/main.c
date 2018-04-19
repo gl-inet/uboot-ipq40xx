@@ -656,8 +656,8 @@ void main_loop (void)
 		eth_initialize(gd->bd);
 		gd->flags &= ~GD_FLG_SILENT;
 		
-		printf( "\nPress press WPS button for more than 5 seconds to run web failsafe mode\n\n" );
-		printf( "WPS button is pressed for: %2d second(s)", counter);
+		printf( "\nPress RESET button for more than 5 seconds to run web failsafe mode\n\n" );
+		printf( "RESET button is pressed for: %2d second(s)", counter);
 	}
 	while ( get_gpio_status() == 0 ) {
 		if ( counter < 5 ) {
@@ -692,7 +692,7 @@ void main_loop (void)
 		do_reset(NULL, 0, 0, NULL);
 #endif
 	} else if ( counter > 4 && counter < 20 ) {
-		printf( "\n\nWPS button was pressed for %d seconds\nHTTP server is starting for firmware update...\n\n", counter );
+		printf( "\n\nRESET button was pressed for %d seconds\nHTTP server is starting for firmware update...\n\n", counter );
 
 		int argc = 2;
 		char *argv[2];
@@ -709,7 +709,7 @@ void main_loop (void)
 
 		
 	} else if ((counter <= 4) && (counter > 0)) {
-		printf( "\n\nCatution: WPS button wasn't pressed or not long enough!\nContinuing normal boot...\n\n" );
+		printf( "\n\nCatution: RESET button wasn't pressed or not long enough!\nContinuing normal boot...\n\n" );
 	} else {
 	}
 #endif
