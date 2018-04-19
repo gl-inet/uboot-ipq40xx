@@ -669,7 +669,6 @@ void main_loop (void)
 #ifdef CONFIG_CMD_HTTPD
 	//printf("gpio status = %d, %s\n", get_gpio_status(), getenv("serverip"));
 	int counter = 0;
-	int trycount = 3;
 	if ( get_gpio_status() == 0 ) {
 		/* eth_initialize(gd->bd); */
 		puts("\nNet:   ");
@@ -718,21 +717,8 @@ void main_loop (void)
 #endif
 	} else if ( counter > 4 && counter < 20 ) {
 		printf( "\n\nRESET button was pressed for %d seconds\nHTTP server is starting for firmware update...\n\n", counter );
-
-		int argc = 2;
-		char *argv[2];
-		argv[0] = "2";
-		//argv[1] = "192.168.1.2";
-		argv[1] = getenv("serverip");
-	
-		while ( trycount-- ) {
-			if ( !do_ping(NULL, 0, argc, argv) ) {
-				NetLoopHttpd();	
-			}
-			udelay( 1000000 );
-		}
-
-		
+		udelay( 1000000 );
+		NetLoopHttpd();	
 	} else if ((counter <= 4) && (counter > 0)) {
 		printf( "\n\nCatution: RESET button wasn't pressed or not long enough!\nContinuing normal boot...\n\n" );
 	} else {
