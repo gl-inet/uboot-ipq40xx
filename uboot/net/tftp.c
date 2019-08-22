@@ -25,7 +25,7 @@
 /* # of timeouts before giving up */
 # define TIMEOUT_COUNT	10
 #else
-# define TIMEOUT_COUNT  (CONFIG_NET_RETRY_COUNT * 2)
+# define TIMEOUT_COUNT  0
 #endif
 /* Number of "loading" hashes per line (for checking the image size) */
 #define HASHES_PER_LINE	65
@@ -678,7 +678,7 @@ static void
 TftpTimeout(void)
 {
 	if (++TftpTimeoutCount > TftpTimeoutCountMax) {
-		restart("Retry count exceeded");
+		;
 	} else {
 		puts("T ");
 		NetSetTimeout(TftpTimeoutMSecs, TftpTimeout);
