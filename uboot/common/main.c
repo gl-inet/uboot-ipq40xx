@@ -731,7 +731,12 @@ void main_loop (void)
 #ifdef CONFIG_GL_CHECK_ART
 		if (!find_calibration_data()) {
 			if (/*!check_calibration() &&*/!check_test() && !check_config()) {
-				auto_update_by_tftp();
+				int tftp_upgrade_en;
+				char *tmp;
+				tmp = getenv("tftp_upgrade");
+				tftp_upgrade_en = tmp ? (int)simple_strtol(tmp, NULL, 10) : 0;
+				if(tftp_upgrade_en==1)
+					auto_update_by_tftp();
 				run_command("bootipq 0x84000000",0);//start standard fw
 			} 
 		}
