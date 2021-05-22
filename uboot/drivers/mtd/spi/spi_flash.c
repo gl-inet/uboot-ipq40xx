@@ -13,9 +13,13 @@
 #include <spi_flash.h>
 #include <watchdog.h>
 
-#include <asm/arch-qcom-common/gpio.h>
-
 #include "spi_flash_internal.h"
+
+#include <asm/arch-qcom-common/gpio.h>
+#include "gl/gl_ipq40xx_api.h"
+#include "ipq40xx_cdp.h"
+
+unsigned int gl_wirte_count = 0;
 
 static void spi_flash_addr(struct spi_flash *flash, u32 addr, u8 *cmd)
 {
@@ -33,7 +37,6 @@ static int flash_cmdsz(struct spi_flash *flash)
 	return 1 + flash->addr_width;
 }
 
-unsigned int gl_wirte_count = 0;
 static int spi_flash_read_write(struct spi_slave *spi,
 				const u8 *cmd, size_t cmd_len,
 				const u8 *data_out, u8 *data_in,
@@ -41,13 +44,7 @@ static int spi_flash_read_write(struct spi_slave *spi,
 {
 	unsigned long flags = SPI_XFER_BEGIN;
 	int ret;
-
-	if ((gl_wirte_count % 500) == 0) {
-		write_flash_led_twinkle();
-		gl_wirte_count = 0;
-	}
-	gl_wirte_count++;
-
+	
 	if (data_len == 0)
 		flags |= SPI_XFER_END;
 
@@ -77,8 +74,16 @@ int spi_flash_cmd_read(struct spi_slave *spi, const u8 *cmd,
 }
 
 int spi_flash_cmd_write(struct spi_slave *spi, const u8 *cmd, size_t cmd_len,
-		const void *data, size_t data_len)
+		const void *data, size_t data_len, int twinkle_led)
 {
+	if ((gl_wirte_count % 500) == 0 && twinkle_led == 1) {
+		gpio_twinkle_value(g_gpio_led_upgrade_write_flashing_2);
+		if(g_gpio_led_upgrade_write_flashing_2 != g_gpio_led_upgrade_write_flashing_1)
+			gpio_twinkle_value(g_gpio_led_upgrade_write_flashing_1);
+		gl_wirte_count = 0;
+	}
+
+	gl_wirte_count++;
 	return spi_flash_read_write(spi, cmd, cmd_len, data, NULL, data_len);
 }
 
@@ -93,6 +98,12 @@ int spi_flash_cmd_write_multi(struct spi_flash *flash, u32 offset,
 	page_size = flash->page_size;
 	page_addr = offset / page_size;
 	byte_addr = offset % page_size;
+
+	/*sync GPIO_2GWiFi_LED and GPIO_5GWiFi_LED*/
+	gpio_set_value(g_gpio_led_upgrade_write_flashing_1, LED_OFF);
+	gpio_set_value(g_gpio_led_upgrade_write_flashing_2, LED_OFF);
+	gpio_set_value(g_gpio_led_upgrade_erase_flashing, LED_OFF);
+	gpio_set_value(g_gpio_power_led, !g_is_power_led_active_low);
 
 	ret = spi_claim_bus(flash->spi);
 	if (ret) {
@@ -125,7 +136,7 @@ int spi_flash_cmd_write_multi(struct spi_flash *flash, u32 offset,
 		}
 
 		ret = spi_flash_cmd_write(flash->spi, cmd, flash_cmdsz(flash),
-					  buf + actual, chunk_len);
+					  buf + actual, chunk_len, 1);
 		if (ret < 0) {
 			debug("SF: write failed\n");
 			break;
@@ -268,14 +279,17 @@ static int spi_flash_cmd_erase_block_or_sector(struct spi_flash *flash, u8 erase
 		debug("SF: Unable to claim SPI bus\n");
 		return ret;
 	}
+	//b1300 s1300 turn off mesh led when  flash erase
+	if(g_gpio_led_upgrade_write_flashing_1 != g_gpio_led_upgrade_write_flashing_2)
+		gpio_set_value(g_gpio_led_upgrade_write_flashing_1, LED_OFF);
 
 	cmd[0] = erase_cmd;
 	start = offset;
 	end = start + len;
 
 	while (offset < end) {
-		
-		erase_flash_led_twinkle();
+
+		gpio_twinkle_value(g_gpio_led_upgrade_erase_flashing);
 		
 		spi_flash_addr(flash, offset, cmd);
 		offset += erase_size;
@@ -287,7 +301,7 @@ static int spi_flash_cmd_erase_block_or_sector(struct spi_flash *flash, u8 erase
 		if (ret)
 			goto out;
 
-		ret = spi_flash_cmd_write(flash->spi, cmd, flash_cmdsz(flash), NULL, 0);
+		ret = spi_flash_cmd_write(flash->spi, cmd, flash_cmdsz(flash), NULL, 0, 0);
 		if (ret)
 			goto out;
 
@@ -333,7 +347,7 @@ int spi_flash_cmd_berase(struct spi_flash *flash, u8 erase_cmd)
 	if (ret)
 		goto out;
 
-	ret = spi_flash_cmd_write(flash->spi, &erase_cmd, 1, NULL, 0);
+	ret = spi_flash_cmd_write(flash->spi, &erase_cmd, 1, NULL, 0, 1);
 	if (ret)
 		goto out;
 

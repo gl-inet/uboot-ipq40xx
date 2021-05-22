@@ -136,10 +136,10 @@ typedef unsigned short uip_stats_t;
 #define UIP_IPADDR1     168 /**< The second octet of the IP address of
 			       this uIP node, if UIP_FIXEDADDR is
 			       1. \hideinitializer */
-#define UIP_IPADDR2     0   /**< The third octet of the IP address of
+#define UIP_IPADDR2     1   /**< The third octet of the IP address of
 			       this uIP node, if UIP_FIXEDADDR is
 			       1. \hideinitializer */
-#define UIP_IPADDR3     250   /**< The fourth octet of the IP address of
+#define UIP_IPADDR3     1   /**< The fourth octet of the IP address of
 			       this uIP node, if UIP_FIXEDADDR is
 			       1. \hideinitializer */
 
@@ -480,12 +480,14 @@ void uip_log(char *msg);
  * which are big endian. The BYTE_ORDER macro should be changed to
  * reflect the CPU architecture on which uIP is to be run.
  */
+
 #ifndef LITTLE_ENDIAN
 #define LITTLE_ENDIAN  3412
 #endif /* LITTLE_ENDIAN */
 #ifndef BIG_ENDIAN
 #define BIG_ENDIAN     1234
 #endif /* BIGE_ENDIAN */
+
 
 /**
  * The byte order of the CPU architecture on which uIP is to be run.

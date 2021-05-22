@@ -103,17 +103,15 @@
 #include "sntp.h"
 #endif
 #include "tftp.h"
-#include "httpd.h"
 
-#if defined(CONFIG_CMD_HTTPD)
+#include "gl/gl_ipq40xx_api.h"
+#ifdef CONFIG_HTTPD
+#include "httpd.h"
 #include "../httpd/uipopt.h"
 #include "../httpd/uip.h"
 #include "../httpd/uip_arp.h"
-#include "../httpd/httpd.h"
-#include "gl_config.h"
+#include "addrspace.h"
 #endif
-
-#include <asm/arch-qcom-common/gpio.h>
 
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -213,19 +211,26 @@ static ulong	timeStart;
 static ulong	timeDelta;
 /* THE transmit packet */
 uchar *NetTxPacket;
+
+int TftpdownloadStatus = GL_FAILED;
+
+#ifdef CONFIG_HTTPD
 unsigned char *webfailsafe_data_pointer = NULL;
 int	webfailsafe_is_running = 0;
 int	webfailsafe_ready_for_upgrade = 0;
 int	webfailsafe_upgrade_type = WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE;
+
 uchar          *NetArpWaitTxPacket;	/* THE transmit packet			*/
 uchar 		NetArpWaitPacketBuf[PKTSIZE_ALIGN + PKTALIGN];
 extern IPaddr_t	NetArpWaitReplyIP;
+#endif
 
 static int net_check_prereq(enum proto_t protocol);
 
 static int NetTryCount;
-
-void NetReceiveHttpd(volatile uchar * inpkt, int len);
+#ifdef CONFIG_LED_FLASH_WHEN_NO_FIRMWARE
+static int led_twinkle_counter = 0;
+#endif
 
 /**********************************************************************/
 
@@ -933,6 +938,182 @@ static void receive_icmp(struct ip_udp_hdr *ip, int len,
 	}
 }
 
+#ifdef CONFIG_WINDOWS_UPGRADE_SUPPORT
+char gl_probe_upgrade=0;
+char upgrade_listen=0;
+
+static char gl_cmd_msg[5][256]={0}; 
+
+void gl_upgrade_send_msg(char *msg)
+{
+    char i = 0;
+    char msg_len=strlen(msg);
+    msg_len+=1;
+    unsigned char rep[2][42]={{ 0xff,0xff,0xff,0xff,0xff,0xff,0x14,0x6b,0x9c,0xb7,0x12,0x30,0x08,0x00,0x45,0x00,0x00,0x4d,0x00,0x01,0x00,0x00,0x40,0x01,0xb9,0x06,0xc0,0xa8,0x01,0x01,0xff,0xff,0xff,0xff,0x08,0x00,0xfa,0xb1,0x00,0x01,0x00,0x01 },{0x00 }};
+    struct eth_device *eth = eth_get_dev();
+    if(eth->state == ETH_STATE_PASSIVE){
+        bd_t *bd = gd->bd;
+        eth_init(bd);
+                
+    }
+    memcpy(rep[1],msg,msg_len);
+
+    for(i=0;i<5;i++){
+        memcpy((void*)NetTxPacket, rep, 42 + msg_len);
+        eth_send(NetTxPacket, 42 + msg_len);
+        udelay (10000);
+            
+    }
+
+
+}
+
+
+char get_crc_param(char *buf,char *result,char num)
+{
+    int i=0;
+    int cunt=-1;
+    char *start=buf;
+    int len=0;
+    while((buf[i] != '\0') && (buf[i] != '\r') && (buf[i] != '\n') ){
+        if(buf[i] == ','){
+            if(++cunt == num){
+                len = buf+i-start;
+                memcpy(result,start,len);
+                result[len]='\0';
+                return 0;
+                            
+            }
+            start=buf+i+1;
+                    
+        }
+        i++;
+            
+    }
+    if((buf[i] == '\0') && (++cunt == num)){
+        len = buf+i-start;
+        memcpy(result,start,len);
+        result[len]='\0';
+        return 0;
+            
+    }
+    return -1;
+
+}
+char gl_cmd_ret = 1;
+int gl_upgrade_cmd_handle(char *cmd)
+{
+    if(strncmp(cmd,"scan",4)==0){
+        if(upgrade_listen == 0){
+            gl_upgrade_send_msg("glroute:hello");
+            upgrade_listen = 1;
+            printf("glinet scan\n");
+        }       
+    }
+    else if(strncmp(cmd,"cmd-",4)==0){
+        int i=0;
+        for(i=0;i<5;i++){
+            if(strlen(gl_cmd_msg[i])==0){
+                strcpy(gl_cmd_msg[i],cmd+4);
+                gl_upgrade_send_msg("glroute:ok");
+                printf("\nCMD:%s\n",gl_cmd_msg[i]);
+                break;
+                            
+            }
+                    
+        }
+        if( i >= 5  )
+            gl_upgrade_send_msg("glroute:err-no_space");
+            
+    }
+    else if (strncmp(cmd,"do-",3)==0){
+            int i=0;
+            for(i=0;i<5;i++){
+                if(strlen(gl_cmd_msg[i])){
+                    printf("\nDo cmd\n");
+                    setenv("gl_do_cmd",gl_cmd_msg[i]);
+                    gl_cmd_ret=run_command("run_var gl_do_cmd", 0);
+                                
+                }
+                else{
+                    break;
+                                
+                }
+                    
+            }
+            memset(gl_cmd_msg,0,sizeof(gl_cmd_msg));
+            gl_upgrade_send_msg("glroute:ok");
+            
+    }
+    else if (strncmp(cmd,"dhcp",4)==0){
+            run_command("dhcpd start", 0);
+            gl_upgrade_send_msg("glroute:ok");
+            
+    }
+    else if (strncmp(cmd,"crc-",4)==0){
+            char str_value[16]={0};
+            ulong addr, length,raw,crc;
+            get_crc_param(cmd+4,str_value,0);
+            addr  = simple_strtoul(str_value,NULL,16);
+            get_crc_param(cmd+4,str_value,1);
+            length = simple_strtoul(str_value,NULL,16);
+            get_crc_param(cmd+4,str_value,2);
+            raw = simple_strtoul(str_value,NULL,16);
+            crc = crc32 (0, (const uchar *) addr, length);
+            printf("crc:%x,%x,%x,%x\n",addr,length,raw,crc);
+            if((crc == raw)||(gl_cmd_ret == 0)){
+                gl_cmd_ret = 1;
+                gl_upgrade_send_msg("glroute:ok");
+                gl_probe_upgrade = 0;
+                upgrade_listen = 0;
+                        
+            }
+            else{
+                char err_msg[32]={0};
+                sprintf(err_msg,"glroute:err-crc_%x",crc);
+                gl_upgrade_send_msg(err_msg);
+                    
+            }
+                    
+    }
+
+    return 0;
+
+}
+
+void gl_upgrade_hook(volatile uchar * inpkt, int len)
+{
+    char pk_buf[2048]={0};
+    //int i=0;
+    memcpy(pk_buf, (const char *)inpkt, len);
+    //    for(i=0;i<len;i++){
+    //         printf("%d:%02X,",i,pk_buf[i]);
+    //    }
+    if(strstr(pk_buf+42,"glinet:")){
+
+        gl_upgrade_cmd_handle(pk_buf+42+7);
+            
+    }
+}
+
+void gl_upgrade_probe(void)
+{
+    eth_rx();
+
+}
+
+void gl_upgrade_listen(void)
+{
+    while(upgrade_listen && gl_probe_upgrade)
+    eth_rx();
+
+}
+
+extern char NetUipLoop;
+extern char dhcpd_end;
+#endif //CONFIG_WINDOWS_UPGRADE_SUPPORT
+
+
 void
 NetReceive(uchar *inpkt, int len)
 {
@@ -946,14 +1127,32 @@ NetReceive(uchar *inpkt, int len)
 #endif
 	ushort cti = 0, vlanid = VLAN_NONE, myvlanid, mynvlanid;
 
-	debug_cond(DEBUG_NET_PKT, "packet received\n");
+	debug_cond(DEBUG_NET_PKT, "packet received %d\n", len);
 
-	#if defined(CONFIG_CMD_HTTPD)
-	if(webfailsafe_is_running){
-		NetReceiveHttpd(inpkt, len);
+#ifdef CONFIG_WINDOWS_UPGRADE_SUPPORT
+    if(gl_probe_upgrade){
+        gl_probe_upgrade = 0;
+        gl_upgrade_hook(inpkt, len);
+        gl_probe_upgrade = 1;
+        return;
+            
+    }
+
+    if(NetUipLoop) {
+        dev_received(inpkt, len);
+        return;
+            
+    }
+#endif //CONFIG_WINDOWS_UPGRADE_SUPPORT
+
+	/* Proccess browser http request */
+#ifdef CONFIG_HTTPD
+	if ( webfailsafe_is_running ) {
+		NetReceiveHttpd( inpkt, len );
 		return;
 	}
-	#endif
+#endif
+
 	NetRxPacket = inpkt;
 	NetRxPacketLen = len;
 	et = (struct ethernet_hdr *)inpkt;
@@ -1124,7 +1323,7 @@ NetReceive(uchar *inpkt, int len)
 			return;
 		} else if (ip->ip_p != IPPROTO_UDP) {	/* Only UDP packets */
 			return;
-		}
+		} 
 
 		debug_cond(DEBUG_DEV_PKT,
 			"received UDP (to=%pI4, from=%pI4, len=%d)\n",
@@ -1476,46 +1675,62 @@ ushort getenv_VLAN(char *var)
 	return string_to_VLAN(getenv(var));
 }
 
+#ifdef CONFIG_HTTPD
+void print_IPaddr (IPaddr_t x)
+{
+	char tmp[16];
+
+	ip_to_string (x, tmp);
+
+	puts (tmp);
+}
+
+#if 1 /* for web failsafe mod , added by kyson<luoweilong@gl-inet.com> */
 
 /**********************************************************************************
  * HTTPD section
  */
 
-#if defined(CONFIG_CMD_HTTPD)
+#define BUF	((struct uip_eth_hdr *)&uip_buf[0])
 
-void NetSendHttpd(void){
+void NetSendHttpd( void ){
 	volatile uchar *tmpbuf = NetTxPacket;
 	int i;
 
-	for(i = 0; i < 40 + UIP_LLH_LEN; i++){
+	for ( i = 0; i < 40 + UIP_LLH_LEN; i++ ) {
 		tmpbuf[i] = uip_buf[i];
 	}
 
-	for(; i < uip_len; i++){
-		tmpbuf[i] = uip_appdata[i - 40 - UIP_LLH_LEN];
+	for( ; i < uip_len; i++ ) {
+		tmpbuf[i] = uip_appdata[ i - 40 - UIP_LLH_LEN ];
 	}
 
-	eth_send(NetTxPacket, uip_len);
+	eth_send( NetTxPacket, uip_len );
 }
 
-void NetReceiveHttpd(volatile uchar * inpkt, int len){
-	struct uip_eth_hdr *eth_hdr = (struct uip_eth_hdr *)uip_buf;
+void NetReceiveHttpd( volatile uchar * inpkt, int len ) 
+{
+	//if (len < ETHER_HDR_SIZE)
+	//	return;
 
-	memcpy(uip_buf, (const void *)inpkt, len);
+	//debug("NetReceiveHttpd---> buf->type =%04X, len = %d\n", ntohs(BUF->type), len);
+	
+	memcpy( uip_buf, ( const void * )inpkt, len );
 	uip_len = len;
 
-	if(eth_hdr->type == htons(UIP_ETHTYPE_IP)){
+	if ( BUF->type == htons( UIP_ETHTYPE_IP ) ) {
+		
 		uip_arp_ipin();
 		uip_input();
 
-		if(uip_len > 0){
+		if ( uip_len > 0 ) {
 			uip_arp_out();
 			NetSendHttpd();
 		}
-	} else if(eth_hdr->type == htons(UIP_ETHTYPE_ARP)){
+	} else if( BUF->type == htons( UIP_ETHTYPE_ARP ) ) {
 		uip_arp_arpin();
 
-		if(uip_len > 0){
+		if ( uip_len > 0 ) {
 			NetSendHttpd();
 		}
 	}
@@ -1526,16 +1741,23 @@ void NetReceiveHttpd(volatile uchar * inpkt, int len){
  * HTTP web server for web failsafe mode
  *
  ***************************************/
-int NetLoopHttpd(void){
+
+int HttpdLoop()
+{
 	bd_t *bd = gd->bd;
+	int ret = -1;
+	uip_ipaddr_t ipaddr;
 	unsigned short int ip[2];
-	unsigned char ethinit_attempt = 0;
 	struct uip_eth_addr eaddr;
 
-#ifdef CONFIG_NET_MULTI
+#ifdef CONFIG_WINDOWS_UPGRADE_SUPPORT
+    dhcpd_end = 0;
+    NetUipLoop = 0;
+#endif
+
 	NetRestarted = 0;
 	NetDevExists = 0;
-#endif
+	NetTryCount = 1;
 
 	/* XXX problem with bss workaround */
 	NetArpWaitPacketMAC	= NULL;
@@ -1561,158 +1783,216 @@ int NetLoopHttpd(void){
 		NetArpWaitTxPacket -= (ulong)NetArpWaitTxPacket % PKTALIGN;
 		NetArpWaitTxPacketSize = 0;
 	}
+	
+	debug_cond(DEBUG_INT_STATE, "--- NetLoop Entry\n");
 
+	bootstage_mark_name(BOOTSTAGE_ID_ETH_START, "eth_start");
+tryagain:
+	net_init();
+	eth_halt();
+	eth_set_current();
+#ifdef CONFIG_LED_FLASH_WHEN_NO_FIRMWARE
+	if(g_is_flashing_power_led)
+		gpio_twinkle_value(g_gpio_power_led);
+#endif
+	if (eth_init(bd) < 0) {
+		eth_halt();
+#ifdef CONFIG_LED_FLASH_WHEN_NO_FIRMWARE
+	if(g_is_flashing_power_led)
+		udelay(90000);
+	else
+		udelay(1000000);
+#else
+		udelay(1000000);
+#endif
+		goto tryagain;
+	}
+
+restart:
+	net_set_state(NETLOOP_CONTINUE);
+
+	/*
+	 *	Start the ball rolling with the given start function.  From
+	 *	here on, this code is a state machine driven by received
+	 *	packets and timer events.
+	 */
+	debug_cond(DEBUG_INT_STATE, "--- NetLoop Init\n");
+	NetInitLoop();
+
+	NetDevExists = 1;
 	NetBootFileXferSize = 0;
 
-	// restart label
-	restart:
+	if (NetOurIP == 0) {
+		puts("*** ERROR: `ipaddr' not set\n");
+	}
 
-	eth_halt();
+	if (memcmp(NetOurEther, "\0\0\0\0\0\0", 6) == 0) {
+		int num = eth_get_dev_index();
 
-#ifdef CONFIG_NET_MULTI
-	eth_set_current();
-#endif
-
-	while(ethinit_attempt < 10){
-		if(!eth_init(bd)){
-			ethinit_attempt = 0;
+		switch (num) {
+		case -1:
+			puts("*** ERROR: No ethernet found.\n");
+			return 1;
+		case 0:
+			puts("*** ERROR: `ethaddr' not set\n");
 			break;
-		} else {
-			ethinit_attempt++;
-			eth_halt();
-			udelay(1000000);
+		default:
+			printf("*** ERROR: `eth%daddr' not set\n",
+				num);
+			break;
 		}
+
+		NetStartAgain();
+		return 2;
 	}
 
-	if(ethinit_attempt > 0){
-		eth_halt();
-		printf("couldn't initialize eth (cable disconnected?)!\n\n");
-		return(-1);
-	}
+	//printf("NetOurIP = %pI4\n", &NetOurIP);
+	printf("NetOurEther = %02x:%02x:%02x:%02x:%02x:%02x\n", 
+		NetOurEther[0], NetOurEther[1], NetOurEther[2], NetOurEther[3], NetOurEther[4], NetOurEther[5]);
 
-	// get MAC address
-#ifdef CONFIG_NET_MULTI
-	memcpy(NetOurEther, eth_get_dev()->enetaddr, 6);
-#else
-	eth_getenv_enetaddr("ethaddr", NetOurEther);
-#endif
-
+	/*init httpd*/
+	HttpdStart();
+	
+	/*set MAC address*/
 	eaddr.addr[0] = NetOurEther[0];
 	eaddr.addr[1] = NetOurEther[1];
 	eaddr.addr[2] = NetOurEther[2];
 	eaddr.addr[3] = NetOurEther[3];
 	eaddr.addr[4] = NetOurEther[4];
 	eaddr.addr[5] = NetOurEther[5];
+	uip_setethaddr( eaddr );
 
-	// set MAC address
-	uip_setethaddr(eaddr);
-
-	// set ip and other addresses
-	// TODO: do we need this with uIP stack?
-	NetCopyIP(&NetOurIP, &bd->bi_ip_addr);
-
-	NetOurGatewayIP		= getenv_IPaddr("gatewayip");
-	NetOurSubnetMask	= getenv_IPaddr("netmask");
-	NetOurVLAN			= getenv_VLAN("vlan");
-	NetOurNativeVLAN	= getenv_VLAN("nvlan");
-
-	// start server...
+	
 	IPaddr_t tmp_ip_addr = ntohl( bd->bi_ip_addr );
 	printf( "HTTP server is starting at IP: %ld.%ld.%ld.%ld\n", 
-		(ulong)( tmp_ip_addr & 0xff000000 ) >> 24, (ulong)( tmp_ip_addr & 0x00ff0000 ) >> 16, 
-		(ulong)( tmp_ip_addr & 0x0000ff00 ) >> 8, (ulong)( tmp_ip_addr & 0x000000ff ) );
+		( tmp_ip_addr & 0xff000000 ) >> 24, ( tmp_ip_addr & 0x00ff0000 ) >> 16, 
+		( tmp_ip_addr & 0x0000ff00 ) >> 8, ( tmp_ip_addr & 0x000000ff ) );
 
-	HttpdStart();
-
-	// set local host ip address
+	/*set local host ip address*/
 	ip[0] = htons( ( tmp_ip_addr & 0xFFFF0000 ) >> 16 );
 	ip[1] = htons( tmp_ip_addr & 0x0000FFFF );
 
-	uip_sethostaddr(ip);
+	uip_sethostaddr( ip );
 
-	// set network mask (255.255.255.0 -> local network)
+	/*set network mask (255.255.255.0 -> local network)*/
 	ip[0] = htons( ( ( 0xFFFFFF00 & 0xFFFF0000 ) >> 16 ) );
 	ip[1] = htons( ( 0xFFFFFF00 & 0x0000FFFF ) );
+	uip_setnetmask( ip );
 
-	uip_setnetmask(ip);
-
-	// should we also set default router ip address?
-	//uip_setdraddr();
-
-	// show current progress of the process
-	do_http_progress(WEBFAILSAFE_PROGRESS_START);
+	/* show current progress of the process*/
+	do_http_progress( WEBFAILSAFE_PROGRESS_START );
 
 	webfailsafe_is_running = 1;
-
-	// infinite loop
-	for(;;){
-
-		/*
-		 *	Check the ethernet for a new packet.
-		 *	The ethernet receive routine will process it.
-		 */
-		if(eth_rx() > 0){
-			HttpdHandler();
+	
+	/*************/
+	
+	/*
+	 *	Main packet reception loop.  Loop receiving packets until
+	 *	someone sets `net_state' to a state that terminates.
+	 */
+	for (;;) {
+		WATCHDOG_RESET();
+#ifdef CONFIG_SHOW_ACTIVITY
+		show_activity(1);
+#endif
+#ifdef CONFIG_LED_FLASH_WHEN_NO_FIRMWARE
+		if(g_is_flashing_power_led)
+		{
+			led_twinkle_counter++;
+			if (led_twinkle_counter == 10000) {
+				gpio_twinkle_value(g_gpio_power_led);
+				led_twinkle_counter=0;
+			}
 		}
+#endif
+		/*
+		 *	Check the ethernet for a new packet.  The ethernet
+		 *	receive routine will process it.
+		 */
+		if ( eth_rx() > 0 )
+			HttpdHandler();
 
-		// if CTRL+C was pressed -> return!
-		if(ctrlc()){
+		//if (NetRxPacketLen > 0) {
+			//HttpdHandler();
+		//}
+
+		
+		/*
+		 *	Abort if ctrl-c was pressed.
+		 */
+		if (ctrlc()) {
+			/* cancel any ARP that may not have completed */
+			NetArpWaitPacketIP = 0;
+
+			net_cleanup_loop();
 			eth_halt();
-
-			// reset global variables to default state
-			webfailsafe_is_running = 0;
-			webfailsafe_ready_for_upgrade = 0;
-			webfailsafe_upgrade_type = WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE;
-
-			/* Invalidate the last protocol */
-			//eth_set_last_protocol(BOOTP);
-
-			//all_led_off();
-
-			printf("\nWeb failsafe mode aborted!\n\n");
+			puts("\nAbort\n");
+			/* include a debug print as well incase the debug
+			   messages are directed to stderr */
+			debug_cond(DEBUG_INT_STATE, "--- NetLoop Abort!\n");
 			do_reset(NULL, 0, 0, NULL);
+			goto done;
 		}
 
 		// until upload is not completed, get back to the start of the loop
-		if(!webfailsafe_ready_for_upgrade){
+		if ( !webfailsafe_ready_for_upgrade ) {
 			continue;
 		}
 
 		// stop eth interface
 		eth_halt();
 
-		// show progress
-		do_http_progress(WEBFAILSAFE_PROGRESS_UPLOAD_READY);
+		do_http_progress( WEBFAILSAFE_PROGRESS_UPLOAD_READY );
 
 		// try to make upgrade!
-		if(do_http_upgrade(NetBootFileXferSize, webfailsafe_upgrade_type) >= 0){
-			udelay(500000);
-
-			do_http_progress(WEBFAILSAFE_PROGRESS_UPGRADE_READY);
-
-			udelay(500000);
+		if ( do_http_upgrade( NetBootFileXferSize, webfailsafe_upgrade_type ) == 0 ) {
+			udelay( 500000 );
+			do_http_progress( WEBFAILSAFE_PROGRESS_UPGRADE_READY );
+			udelay( 500000 );
 
 			/* reset the board */
-			do_reset(NULL, 0, 0, NULL);
+			do_reset( NULL, 0, 0, NULL );
 		}
-		break;
+
+		switch (net_state) {
+
+		case NETLOOP_RESTART:
+			NetRestarted = 1;
+			goto restart;
+
+		case NETLOOP_SUCCESS:
+			net_cleanup_loop();
+			if (NetBootFileXferSize > 0) {
+				char buf[20];
+				printf("Bytes transferred = %ld (%lx hex)\n",
+					NetBootFileXferSize,
+					NetBootFileXferSize);
+				sprintf(buf, "%lX", NetBootFileXferSize);
+				setenv("filesize", buf);
+
+				sprintf(buf, "%lX", (unsigned long)load_addr);
+				setenv("fileaddr", buf);
+			}
+			eth_halt();
+			ret = NetBootFileXferSize;
+			debug_cond(DEBUG_INT_STATE, "--- NetLoop Success!\n");
+			goto done;
+
+		case NETLOOP_FAIL:
+			net_cleanup_loop();
+			debug_cond(DEBUG_INT_STATE, "--- NetLoop Fail!\n");
+			goto done;
+
+		case NETLOOP_CONTINUE:
+			continue;
+		}
 	}
 
-	// reset global variables to default state
-	webfailsafe_is_running = 0;
-	webfailsafe_ready_for_upgrade = 0;
-	webfailsafe_upgrade_type = WEBFAILSAFE_UPGRADE_TYPE_FIRMWARE;
+done:
 
-	NetBootFileXferSize = 0;
-
-	do_http_progress(WEBFAILSAFE_PROGRESS_UPGRADE_FAILED);
-
-	//all_led_off();
-
-	// go to restart
-	goto restart;
-
-	return(-1);
+	return ret;
 }
-#endif /* CONFIG_CMD_HTTPD */
 
+#endif
+
+#endif

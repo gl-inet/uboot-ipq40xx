@@ -16,6 +16,8 @@
 #endif
 
 #include <asm/arch-qcom-common/gpio.h>
+#include "gl/gl_ipq40xx_api.h"
+
 
 /* Well known TFTP port # */
 #define WELL_KNOWN_PORT	69
@@ -71,6 +73,8 @@ static int	TftpRemotePort;
 /* The UDP port at our end */
 static int	TftpOurPort;
 static int	TftpTimeoutCount;
+static int	TftpRestartCount = 0;
+
 /* packet sequence number */
 static ulong	TftpBlock;
 /* last packet sequence number received */
@@ -127,6 +131,8 @@ static char tftp_filename[MAX_LEN];
 #else
 #define TFTP_MTU_BLOCKSIZE 1468
 #endif
+
+#define CONFIG_TFTP_RESTART_COUNT 3
 
 static unsigned short TftpBlkSize = TFTP_BLOCK_SIZE;
 static unsigned short TftpBlkSizeOption = TFTP_MTU_BLOCKSIZE;
@@ -252,8 +258,8 @@ static void show_block_marker(void)
 			putc('#');
 		else if ((TftpBlock % (10 * HASHES_PER_LINE)) == 0)
 			puts("\n\t ");
-		else if ((TftpBlock % (10 * 20)) == 0)
-			download_led_twinkle();
+		else if ((TftpBlock % (10 * 40)) == 0)
+			gpio_twinkle_value(g_gpio_led_tftp_transfer_flashing);
 	}
 }
 
@@ -270,6 +276,7 @@ static void restart(const char *msg)
 #endif
 	NetStartAgain();
 }
+
 
 /*
  * Check if the block number has wrapped, and update progress
@@ -304,6 +311,8 @@ static void tftp_complete(void)
 	}
 #endif
 	puts("\ndone\n");
+	gpio_set_value(g_gpio_led_tftp_transfer_flashing, LED_OFF);
+	gpio_set_value(g_gpio_power_led, !g_is_power_led_active_low);
 	net_set_state(NETLOOP_SUCCESS);
 }
 
@@ -429,17 +438,16 @@ TftpSend(void)
 }
 
 #ifdef CONFIG_CMD_TFTPPUT
-#define CONFIG_TFTP_RESTART_COUNT 3
-static int TftpRestartCount = 0;
 static void icmp_handler(unsigned type, unsigned code, unsigned dest,
 			 IPaddr_t sip, unsigned src, uchar *pkt, unsigned len)
 {
 	if (type == ICMP_NOT_REACH && code == ICMP_NOT_REACH_PORT) {
-		if (++TftpRestartCount > CONFIG_TFTP_RESTART_COUNT) {
-			net_set_state(NETLOOP_FAIL);
-		}
-
 		/* Oh dear the other end has gone away */
+		if (++TftpRestartCount > CONFIG_TFTP_RESTART_COUNT) {
+			puts ("Starting firmware\n\n");
+			run_command("run_var bootcmd", 0);
+		}
+		//printf("TFTP server died %d\n", TftpRestartCount);
 		restart("TFTP server died");
 	}
 }
@@ -687,7 +695,6 @@ TftpTimeout(void)
 	}
 }
 
-
 void TftpStart(enum proto_t protocol)
 {
 	char *ep;             /* Environment pointer */
@@ -788,6 +795,7 @@ void TftpStart(enum proto_t protocol)
 	TftpTimeoutCountMax = TftpRRQTimeoutCountMax;
 
 	NetSetTimeout(TftpTimeoutMSecs, TftpTimeout);
+	
 	net_set_udp_handler(TftpHandler);
 #ifdef CONFIG_CMD_TFTPPUT
 	net_set_icmp_handler(icmp_handler);

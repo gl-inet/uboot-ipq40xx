@@ -154,7 +154,7 @@ static int macronix_write_status(struct spi_flash *flash, u8 sr)
 	}
 
 	cmd = CMD_WRITE_STATUS;
-	ret = spi_flash_cmd_write(flash->spi, &cmd, 1, &sr, 1);
+	ret = spi_flash_cmd_write(flash->spi, &cmd, 1, &sr, 1, 0);
 	if (ret) {
 		debug("SF: fail to write status register\n");
 		return ret;

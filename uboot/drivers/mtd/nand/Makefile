@@ -23,6 +23,9 @@
 
 include $(TOPDIR)/config.mk
 
+CPPFLAGS += -I$(TOPDIR)/board/qcom/ipq40xx_cdp -I$(TOPDIR)/board/qcom/common
+CFLAGS += -I$(TOPDIR)/board/qcom/ipq40xx_cdp -I$(TOPDIR)/board/qcom/common
+
 LIB	:= $(obj)libnand.o
 
 ifdef CONFIG_CMD_NAND

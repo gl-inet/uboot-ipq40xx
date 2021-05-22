@@ -40,7 +40,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define XMK_STR(x)	#x
 #define MK_STR(x)	XMK_STR(x)
 
-#if 0
+#if 1
 const uchar default_environment[] = {
 #ifdef	CONFIG_BOOTARGS
 	"bootargs="	CONFIG_BOOTARGS			"\0"
@@ -131,9 +131,19 @@ const uchar default_environment[] = {
 #ifdef	CONFIG_EXTRA_ENV_SETTINGS
 	CONFIG_EXTRA_ENV_SETTINGS
 #endif
+	"bootstopkey=" CONFIG_BOOTSTOPKEY  "\0"
 	"\0"
 };
 #else
+
+#define CONFIG_IPADDR 192.168.1.1
+#define CONFIG_SERVERIP 192.168.1.2
+#define CONFIG_LOADADDR 0x88000000
+#define UBOOT_NAME "uboot-gl-b1300.bin"
+#define FW_NAME "lede-ipq806x-GL-B1300-squashfs-sysupgrade.bin"
+#define QSDK_FW_NAME "lede-ipq806x-GL-B1300-squashfs-sysupgrade.bin"
+#define MACHID 8010000
+
 const uchar default_environment[] = {
 #ifdef	CONFIG_BOOTARGS
 	"bootargs="	CONFIG_BOOTARGS			"\0"
@@ -156,39 +166,8 @@ const uchar default_environment[] = {
 #ifdef	CONFIG_LOADS_ECHO
 	"loads_echo="	MK_STR(CONFIG_LOADS_ECHO)	"\0"
 #endif
-#ifdef	CONFIG_ETHADDR
-	"ethaddr="	MK_STR(CONFIG_ETHADDR)		"\0"
-#endif
-#ifdef	CONFIG_ETH1ADDR
-	"eth1addr="	MK_STR(CONFIG_ETH1ADDR)		"\0"
-#endif
-#ifdef	CONFIG_ETH2ADDR
-	"eth2addr="	MK_STR(CONFIG_ETH2ADDR)		"\0"
-#endif
-#ifdef	CONFIG_ETH3ADDR
-	"eth3addr="	MK_STR(CONFIG_ETH3ADDR)		"\0"
-#endif
-#ifdef	CONFIG_ETH4ADDR
-	"eth4addr="	MK_STR(CONFIG_ETH4ADDR)		"\0"
-#endif
-#ifdef	CONFIG_ETH5ADDR
-	"eth5addr="	MK_STR(CONFIG_ETH5ADDR)		"\0"
-#endif
-#ifdef	CONFIG_IPADDR
 	"ipaddr="	MK_STR(CONFIG_IPADDR)		"\0"
-#endif
-#ifdef	CONFIG_SERVERIP
 	"serverip="	MK_STR(CONFIG_SERVERIP)		"\0"
-#endif
-#ifdef	CONFIG_SYS_AUTOLOAD
-	"autoload="	CONFIG_SYS_AUTOLOAD		"\0"
-#endif
-#ifdef	CONFIG_PREBOOT
-	"preboot="	CONFIG_PREBOOT			"\0"
-#endif
-#ifdef	CONFIG_ROOTPATH
-	"rootpath="	CONFIG_ROOTPATH			"\0"
-#endif
 #ifdef	CONFIG_GATEWAYIP
 	"gatewayip="	MK_STR(CONFIG_GATEWAYIP)	"\0"
 #endif
@@ -221,9 +200,18 @@ const uchar default_environment[] = {
 	"soc="		CONFIG_SYS_SOC			"\0"
 #endif
 #endif
-#ifdef	CONFIG_EXTRA_ENV_SETTINGS
-	CONFIG_EXTRA_ENV_SETTINGS
-#endif
+	"stderr=serial\0"
+	"stdin=serial\0"
+	"stdout=serial\0"
+	"machid=" MK_STR(MACHID)  "\0"
+	"loadaddr=" MK_STR(CONFIG_LOADADDR)  "\0"
+	"uboot_name=" UBOOT_NAME "\0" 
+	"fw_name=" FW_NAME "\0"
+	"qsdk_fw_name=" QSDK_FW_NAME "\0"
+	"lu=if ping $serverip; then tftpboot $loadaddr $uboot_name; && sf probe && sf erase 0xf0000 0x80000 && sf write $loadaddr 0xf0000 0x80000; fi\0"
+	"lf=if ping $serverip; then tftpboot $loadaddr $fw_name; fi\0"
+	"lc=if ping $serverip; then tftpboot $loadaddr $uboot_name; fi\0"
+	"lfq=if ping $serverip; then tftpboot $loadaddr $qsdk_fw_name; && imgaddr=$loadaddr && source $imgaddr:script; fi\0"
 	"\0"
 };
 
@@ -310,6 +298,7 @@ int env_import(const char *buf, int check)
 
 		if (crc32(0, ep->data, ENV_SIZE) != crc) {
 			set_default_env("!bad CRC");
+			saveenv();
 			return 0;
 		}
 	}

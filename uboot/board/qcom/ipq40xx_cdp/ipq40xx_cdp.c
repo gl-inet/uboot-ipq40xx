@@ -54,6 +54,7 @@
 #include <jffs2/load_kernel.h>
 #include <asm/arch-qcom-common/clk.h>
 #include <asm/arch-ipq40xx/smem.h>
+#include <gl/gl_ipq40xx_api.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -366,6 +367,7 @@ int board_early_init_f(void)
 {
 	/* Retrieve from SMEM */
 	gboard_param = get_board_param(smem_get_board_platform_type());
+	//gl_names_init();
 	return 0;
 }
 
@@ -581,6 +583,53 @@ static void ipq40xx_edma_common_init(void)
 		MDIO_CTRL_0_GPHY(0xa), MDIO_CTRL_0_REG);
 }
 
+void light_all_led(unsigned int machid)
+{
+	switch (machid) {
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+		mdelay(1);
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(GPIO_AP1300_POWER_LED));
+		mdelay(1);
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(GPIO_AP1300_INET_LED));
+		mdelay(1);
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+		mdelay(1);
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(GPIO_B1300_POWER_LED));
+		mdelay(1);
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(GPIO_B1300_MESH_LED));
+		mdelay(1);
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(GPIO_B1300_WIFI_LED));
+		mdelay(1);
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
+		mdelay(1);
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(GPIO_S1300_POWER_LED));
+		mdelay(1);
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(GPIO_S1300_MESH_LED));
+		mdelay(1);
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(GPIO_S1300_WIFI_LED));
+		mdelay(1);
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+		mdelay(1);
+		//b2200 white led active low
+		writel(GPIO_IN, GPIO_IN_OUT_ADDR(GPIO_B2200_POWER_WHITE_LED));
+		mdelay(1);
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(GPIO_B2200_POWER_BLUE_LED));
+		mdelay(1);
+		//b2200 white led active low
+		writel(GPIO_IN, GPIO_IN_OUT_ADDR(GPIO_B2200_INET_WHITE_LED));
+		mdelay(1);
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(GPIO_B2200_INET_BLUE_LED));
+		mdelay(1);
+		break;
+	default:
+		break;
+	}
+}
+
+
 int board_eth_init(bd_t *bis)
 {
 	u32 status;
@@ -590,6 +639,8 @@ int board_eth_init(bd_t *bis)
 	if (gpio) {
 		qca_configure_gpio(gpio, gboard_param->sw_gpio_count);
 	}
+	gl_names_init();
+	light_all_led(gboard_param->machid);
 	switch (gboard_param->machid) {
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_S1:
 	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
@@ -608,7 +659,7 @@ int board_eth_init(bd_t *bis)
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 	case MACH_TYPE_IPQ40XX_AP_DK04_1_C5:
 		mdelay(1);
-		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(40));
+		writel(GPIO_OUT, GPIO_IN_OUT_ADDR(41));
 		ipq40xx_register_switch(ipq40xx_qca8075_phy_init);
 		break;
 	 case MACH_TYPE_IPQ40XX_AP_DK04_1_C2:

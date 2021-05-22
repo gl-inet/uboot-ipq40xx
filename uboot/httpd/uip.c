@@ -73,18 +73,18 @@ header fields and finally send the packet back to the peer.
 
 /* The IP address of this host. If it is defined to be fixed (by setting UIP_FIXEDADDR to 1 in uipopt.h), the address is set here. Otherwise, the address */
 #if UIP_FIXEDADDR > 0
-const unsigned short int uip_hostaddr[2] =
+const u16_t uip_hostaddr[2] =
   {HTONS((UIP_IPADDR0 << 8) | UIP_IPADDR1),
    HTONS((UIP_IPADDR2 << 8) | UIP_IPADDR3)};
-const unsigned short int uip_arp_draddr[2] =
+const u16_t uip_arp_draddr[2] =
   {HTONS((UIP_DRIPADDR0 << 8) | UIP_DRIPADDR1),
    HTONS((UIP_DRIPADDR2 << 8) | UIP_DRIPADDR3)};
-const unsigned short int uip_arp_netmask[2] =
+const u16_t uip_arp_netmask[2] =
   {HTONS((UIP_NETMASK0 << 8) | UIP_NETMASK1),
    HTONS((UIP_NETMASK2 << 8) | UIP_NETMASK3)};
 #else
-unsigned short int uip_hostaddr[2];       
-unsigned short int uip_arp_draddr[2], uip_arp_netmask[2];
+u16_t uip_hostaddr[2];       
+u16_t uip_arp_draddr[2], uip_arp_netmask[2];
 #endif /* UIP_FIXEDADDR */
 
 u8_t uip_buf[UIP_BUFSIZE+2];   /* The packet buffer that contains
@@ -100,7 +100,7 @@ volatile u8_t *uip_urgdata;  /* The uip_urgdata pointer points to
 volatile u8_t uip_urglen, uip_surglen;
 #endif /* UIP_URGDATA > 0 */
 
-volatile unsigned short int uip_len, uip_slen;
+volatile u16_t uip_len, uip_slen;
                              /* The uip_len is either 8 or 16 bits,
 				depending on the maximum packet
 				size. */
@@ -114,7 +114,7 @@ struct uip_conn *uip_conn;   /* uip_conn always points to the current
 struct uip_conn uip_conns[UIP_CONNS];
                              /* The uip_conns array holds all TCP
 				connections. */
-unsigned short int uip_listenports[UIP_LISTENPORTS];
+u16_t uip_listenports[UIP_LISTENPORTS];
                              /* The uip_listenports list all currently
 				listning ports. */
 #if UIP_UDP
@@ -123,7 +123,7 @@ struct uip_udp_conn uip_udp_conns[UIP_UDP_CONNS];
 #endif /* UIP_UDP */
 
 
-static unsigned short int ipid;           /* Ths ipid variable is an increasing
+static u16_t ipid;           /* Ths ipid variable is an increasing
 				number that is used for the IP ID
 				field. */
 
@@ -131,14 +131,14 @@ static u8_t iss[4];          /* The iss variable is used for the TCP
 				initial sequence number. */
 
 #if UIP_ACTIVE_OPEN
-static unsigned short int lastport;       /* Keeps track of the last port used for
+static u16_t lastport;       /* Keeps track of the last port used for
 				a new connection. */
 #endif /* UIP_ACTIVE_OPEN */
 
 /* Temporary variables. */
 volatile u8_t uip_acc32[4];
 static u8_t c, opt;
-static unsigned short int tmp16;
+static u16_t tmp16;
 
 /* Structures and definitions. */
 #define TCP_FIN 0x01
@@ -167,9 +167,14 @@ struct uip_stats uip_stat;
 
 #if UIP_LOGGING == 1
 extern void puts(const char *s);
-#define UIP_LOG(m) puts(m)
+void uip_log(char *msg)
+{
+	puts(msg);
+	puts("\n");
+}
+#define UIP_LOG(m) uip_log(m)
 #else
-#define UIP_LOG(m)
+#define UIP_LOG( m )
 #endif /* UIP_LOGGING == 1 */
 
 /*-----------------------------------------------------------------------------------*/
@@ -202,7 +207,7 @@ uip_init(void)
 /*-----------------------------------------------------------------------------------*/
 #if UIP_ACTIVE_OPEN
 struct uip_conn *
-uip_connect(unsigned short int *ripaddr, unsigned short int rport)
+uip_connect(u16_t *ripaddr, u16_t rport)
 {
   register struct uip_conn *conn, *cconn;
   
@@ -270,7 +275,7 @@ uip_connect(unsigned short int *ripaddr, unsigned short int rport)
 /*-----------------------------------------------------------------------------------*/
 #if UIP_UDP
 struct uip_udp_conn *
-uip_udp_new(unsigned short int *ripaddr, unsigned short int rport)
+uip_udp_new(u16_t *ripaddr, u16_t rport)
 {
   register struct uip_udp_conn *conn;
   
@@ -311,7 +316,7 @@ uip_udp_new(unsigned short int *ripaddr, unsigned short int rport)
 #endif /* UIP_UDP */
 /*-----------------------------------------------------------------------------------*/
 void
-uip_unlisten(unsigned short int port)
+uip_unlisten(u16_t port)
 {
   for(c = 0; c < UIP_LISTENPORTS; ++c) {
     if(uip_listenports[c] == port) {
@@ -322,7 +327,7 @@ uip_unlisten(unsigned short int port)
 }
 /*-----------------------------------------------------------------------------------*/
 void
-uip_listen(unsigned short int port)
+uip_listen(u16_t port)
 {
   for(c = 0; c < UIP_LISTENPORTS; ++c) {
     if(uip_listenports[c] == 0) {
@@ -340,7 +345,7 @@ static u8_t uip_reassbuf[UIP_REASS_BUFSIZE];
 static u8_t uip_reassbitmap[UIP_REASS_BUFSIZE / (8 * 8)];
 static const u8_t bitmap_bits[8] = {0xff, 0x7f, 0x3f, 0x1f,
 				    0x0f, 0x07, 0x03, 0x01};
-static unsigned short int uip_reasslen;
+static u16_t uip_reasslen;
 static u8_t uip_reassflags;
 #define UIP_REASS_FLAG_LASTFRAG 0x01
 static u8_t uip_reasstmr;
@@ -351,8 +356,8 @@ static u8_t uip_reasstmr;
 static u8_t
 uip_reass(void)
 {
-  unsigned short int offset, len;
-  unsigned short int i;
+  u16_t offset, len;
+  u16_t i;
 
   /* If ip_reasstmr is zero, no packet is present in the buffer, so we
      write the IP header of the fragment into the reassembly
@@ -466,7 +471,7 @@ uip_reass(void)
 #endif /* UIP_REASSEMBL */
 /*-----------------------------------------------------------------------------------*/
 static void
-uip_add_rcv_nxt(unsigned short int n)
+uip_add_rcv_nxt(u16_t n)
 {
   uip_add32(uip_conn->rcv_nxt, n);
   uip_conn->rcv_nxt[0] = uip_acc32[0];
@@ -692,7 +697,7 @@ uip_process(u8_t flag)
     goto drop;
   }
   
- //icmp_input:
+// icmp_input:
   UIP_STAT(++uip_stat.icmp.recv);
   
   /* ICMP echo (i.e., ping) processing. This is simple, we only change
@@ -977,8 +982,8 @@ uip_process(u8_t flag)
       } else if(opt == 0x02 &&
 		uip_buf[UIP_TCPIP_HLEN + UIP_LLH_LEN + 1 + c] == 0x04) {
 	/* An MSS option with the right option length. */	
-	tmp16 = ((unsigned short int)uip_buf[UIP_TCPIP_HLEN + UIP_LLH_LEN + 2 + c] << 8) |
-	  (unsigned short int)uip_buf[40 + UIP_LLH_LEN + 3 + c];
+	tmp16 = ((u16_t)uip_buf[UIP_TCPIP_HLEN + UIP_LLH_LEN + 2 + c] << 8) |
+	  (u16_t)uip_buf[40 + UIP_LLH_LEN + 3 + c];
 	uip_connr->initialmss = uip_connr->mss =
 	  tmp16 > UIP_TCP_MSS? UIP_TCP_MSS: tmp16;
 	
@@ -1248,7 +1253,7 @@ uip_process(u8_t flag)
        and the application will retransmit it. This is called the
        "persistent timer" and uses the retransmission mechanim.
     */
-    tmp16 = ((unsigned short int)BUF->wnd[0] << 8) + (unsigned short int)BUF->wnd[1];
+    tmp16 = ((u16_t)BUF->wnd[0] << 8) + (u16_t)BUF->wnd[1];
     if(tmp16 > uip_connr->initialmss ||
        tmp16 == 0) {
       tmp16 = uip_connr->initialmss;
@@ -1271,13 +1276,13 @@ uip_process(u8_t flag)
        put into the uip_appdata and the length of the data should be
        put into uip_len. If the application don't have any data to
        send, uip_len must be set to 0. */
-	if(uip_flags & (UIP_NEWDATA | UIP_ACKDATA)) {
+    if(uip_flags & (UIP_NEWDATA | UIP_ACKDATA)) {
       uip_slen = 0;
       UIP_APPCALL();
 
     appsend:
       
-	  if(uip_flags & UIP_ABORT) {
+      if(uip_flags & UIP_ABORT) {
 	uip_slen = 0;
 	uip_connr->tcpstateflags = CLOSED;
 	BUF->flags = TCP_RST | TCP_ACK;
@@ -1293,7 +1298,7 @@ uip_process(u8_t flag)
 	goto tcp_send_nodata;	
       }
 
-	  /* If uip_slen > 0, the application has data to be sent. */
+      /* If uip_slen > 0, the application has data to be sent. */
       if(uip_slen > 0) {
 
 	/* If the connection has acknowledged data, the contents of
@@ -1311,7 +1316,7 @@ uip_process(u8_t flag)
 	     the mss (the minumum of the MSS and the available
 	     window). */
 	  if(uip_slen > uip_connr->mss) {
-		uip_slen = uip_connr->mss;
+	    uip_slen = uip_connr->mss;
 	  }
 
 	  /* Remember how much data we send out now so that we know
@@ -1330,7 +1335,7 @@ uip_process(u8_t flag)
       uip_connr->nrtx = 0;
     apprexmit:
       uip_appdata = uip_sappdata;
-
+      
       /* If the application has data to be sent, or if the incoming
          packet had new data in it, we must send out a packet. */
       if(uip_slen > 0 && uip_connr->len > 0) {
@@ -1349,7 +1354,7 @@ uip_process(u8_t flag)
 	goto tcp_send_noopts;
       }
     }
-	goto drop;
+    goto drop;
   case LAST_ACK:
     /* We can close this connection if the peer has acknowledged our
        FIN. This is indicated by the UIP_ACKDATA flag. */     
@@ -1470,7 +1475,7 @@ uip_process(u8_t flag)
   BUF->tcpchksum = 0;
   BUF->tcpchksum = ~(uip_tcpchksum());
   
- //ip_send_nolen:
+// ip_send_nolen:
 
   BUF->vhl = 0x45;
   BUF->tos = 0;
@@ -1494,10 +1499,10 @@ uip_process(u8_t flag)
   return;
 }
 /*-----------------------------------------------------------------------------------*/
-/*unsigned short int
-htons(unsigned short int val)
-{
-  return HTONS(val);
-}*/
+//u16_t
+//htons(u16_t val)
+//{
+//  return HTONS(val);
+//}
 /*-----------------------------------------------------------------------------------*/
 /** @} */

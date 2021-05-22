@@ -142,6 +142,7 @@ int find_part_efi(block_dev_desc_t * dev_desc, char *name, disk_partition_t * in
 				__func__);
 			return -1;
 		}
+		return -1;
 	}
 	for (i = 0; i < le32_to_int(gpt_head->num_partition_entries); i++) {
 

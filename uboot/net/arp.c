@@ -30,6 +30,10 @@ IPaddr_t	NetArpWaitPacketIP;
 IPaddr_t	NetArpWaitReplyIP;
 /* MAC address of waiting packet's destination */
 uchar	       *NetArpWaitPacketMAC;
+
+
+
+
 int		NetArpWaitTxPacketSize;
 ulong		NetArpWaitTimerStart;
 int		NetArpWaitTry;

@@ -54,6 +54,8 @@
 #include <net.h>
 #endif
 
+#include "gl/gl_ipq40xx_api.h"
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #if	!defined(CONFIG_ENV_IS_IN_EEPROM)	&& \
@@ -989,7 +991,7 @@ U_BOOT_CMD_COMPLETE(
 #endif
 
 U_BOOT_CMD_COMPLETE(
-	printenv, CONFIG_SYS_MAXARGS, 1,	do_env_print,
+	printenv, CONFIG_SYS_MAXARGS, 0,	do_env_print,
 	"print environment variables",
 	"\n    - print values of all environment variables\n"
 	"printenv name ...\n"
@@ -1034,12 +1036,31 @@ U_BOOT_CMD(
 );
 #endif
 
-#if defined(CONFIG_CMD_RUN)
+#if (defined(CONFIG_CMD_RUN))
 U_BOOT_CMD_COMPLETE(
-	run,	CONFIG_SYS_MAXARGS,	1,	do_run,
-	"run commands in an environment variable",
+	run_var,	CONFIG_SYS_MAXARGS,	1,	do_run_origin,
+	"run commands in an environment variable 1",
 	"var [...]\n"
 	"    - run the commands in the environment variable(s) 'var'",
 	var_complete
+);
+#endif
+#if (defined(CONFIG_CMD_RUN))&&(defined(GL_IPQ40XX_CMD_RUN))
+U_BOOT_CMD(
+	run,	2,	0,	do_run,
+	"run - tftp download image",
+	"run lu:\n"
+	"    - download uboot from your tftp server and replace the current one\n"
+	"run lf:\n"
+	"    - download openwrt firmware from your tftp server and write on flash\n"
+	"run lfq:\n"
+	"    - download qsdk firmware from your tftp server and write on flash\n\n"
+);
+
+U_BOOT_CMD(
+	flash,	5,	0,	do_flash,
+	"flash - flash read/write, only for debug",
+	"flash r <eth0/eth1/ath0/ath1/ath2>         - read mac directory from the flash\n"
+	"flash w <eth0/eth1/ath0/ath1/ath2> <data>  - write mac directory\n\n"
 );
 #endif

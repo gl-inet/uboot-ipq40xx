@@ -46,10 +46,6 @@
 #endif
 #endif /* !DO_DEPS_ONLY */
 
-#define CONFIG_CMD_HTTPD
-#define CONFIG_GL_CHECK_ART
-#define CONFIG_RESET_DEFAULT_ENV
-
 #define CONFIG_IPQ40XX
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_SYS_NO_FLASH
@@ -75,7 +71,7 @@
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_BAUDRATE			115200
 #define CONFIG_SYS_BAUDRATE_TABLE	{4800, 9600, 19200, 38400, 57600,\
-								115200}
+ 								115200}
 #define V_PROMPT			"(IPQ40xx) # "
 #define CONFIG_SYS_PROMPT		V_PROMPT
 #define CONFIG_SYS_CBSIZE		(256 * 2) /* Console I/O Buffer Size */
@@ -104,7 +100,7 @@
 #define CONFIG_SYS_I2C_SPEED	0
 #endif
 
-#define CONFIG_IPQ40XX_PCI
+//#define CONFIG_IPQ40XX_PCI
 #ifdef CONFIG_IPQ40XX_PCI
 #define CONFIG_PCI
 #define CONFIG_CMD_PCI
@@ -271,8 +267,10 @@ typedef struct {
 #define CONFIG_MII
 #define CONFIG_CMD_MII
 #define CONFIG_IPADDR	192.168.1.1
-#define CONFIG_SERVERIP 192.168.1.2
+#define CONFIG_SERVERIP	192.168.1.2
 #define CONFIG_IPQ_NO_MACS	2
+#define CONFIG_BOOTSTOPKEY	"gl"
+
 /*
  * CRASH DUMP ENABLE
  */
@@ -312,41 +310,13 @@ typedef struct {
 
 #define CONFIG_RBTREE		/* for ubi */
 #define CONFIG_CMD_UBI
-#define CONFIG_BOOTCOMMAND	"bootipq"
+#define CONFIG_BOOTCOMMAND	"bootipq; ping 192.168.1.2; run lfq; bootipq; run httpd; reset"
 #define CONFIG_BOOTDELAY	2
 #define CONFIG_IPQ_FDT_HIGH	0x87000000
 
-#define CONFIG_UBOOT_START 			0xf0000
-#define CONFIG_UBOOT_SIZE 			0x80000 
-#define CONFIG_ART_START 			0x170000
-#define CONFIG_ART_SIZE 			0x10000
-#define CONFIG_FIRMWARE_START		0x180000
-#define CONFIG_FIRMWARE_SIZE		0x1E80000
-
-#define CONFIG_LOADADDR 0x84000000
-#define CONFIG_UBOOT_NAME "openwrt-ipq40xx-u-boot-stripped.elf"
-#define CONFIG_FIRMWARE "firmware.bin"
-#define CONFIG_BOOTSTOPKEY	"gl"
-#define CONFIG_VERSION	"20180419"
-
-//#define CONFIG_DEBUG
-
-#define CONFIG_EXTRA_ENV_SETTINGS \
-	"version="CONFIG_VERSION"\0" \
-	"loadaddr="MK_STR(CONFIG_LOADADDR)"\0" \
-	"uboot_name="CONFIG_UBOOT_NAME"\0" \
-	"fw_name="CONFIG_FIRMWARE"\0" \
-	"lu=if ping $serverip; then tftpboot $loadaddr $uboot_name && sf probe && sf erase "MK_STR(CONFIG_UBOOT_START)" "MK_STR(CONFIG_UBOOT_SIZE)" && sf write $loadaddr "MK_STR(CONFIG_UBOOT_START)" $filesize; fi\0" \
-	"lf=if ping $serverip; then " \
-	    "tftpboot $loadaddr $fw_name && " \
-		    "if checkfw; then " \
-		         "burning_qsdk; " \
-		     "else " \
-		         "burning_lede; " \
-		     "fi; " \
-    "fi\0" \
-	"lc=if ping $serverip; then tftpboot $loadaddr config.bin && updateconfig; fi\0"
-
-
+#define CONFIG_HTTPD
+//AP1300 power led flash when no firmware can boot and start httpd
+#define CONFIG_LED_FLASH_WHEN_NO_FIRMWARE
+#define CONFIG_WINDOWS_UPGRADE_SUPPORT
 
 #endif /* _IPQCDP_H */

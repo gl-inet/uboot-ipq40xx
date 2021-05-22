@@ -68,4 +68,4 @@ int do_fuseipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 U_BOOT_CMD(fuseipq, 2, 0, do_fuseipq,
 		"fuse QFPROM registers from memory\n",
-		"fuseipq [address]  - Load fuse(s) and blows in the qfprom\n");
+		"fuseipq [address]  - Load fuse(s) and blows in the qfprom");

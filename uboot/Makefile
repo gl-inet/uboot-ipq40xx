@@ -170,7 +170,7 @@ export	ARCH CPU BOARD VENDOR SOC
 
 # set default to nothing for native builds
 ifeq ($(HOSTARCH),$(ARCH))
-CROSS_COMPILE ?= 
+CROSS_COMPILE ?=
 endif
 
 # load other configuration
@@ -260,7 +260,10 @@ LIBS += drivers/bios_emulator/libatibiosemu.o
 LIBS += drivers/block/libblock.o
 LIBS += drivers/dma/libdma.o
 LIBS += drivers/fpga/libfpga.o
+LIBS += drivers/gl/libgl_ipq40xx_api.o
+ifdef CONFIG_HTTPD
 LIBS += httpd/libhttpd.o
+endif
 LIBS += drivers/gpio/libgpio.o
 LIBS += drivers/hwmon/libhwmon.o
 LIBS += drivers/i2c/libi2c.o
@@ -312,6 +315,12 @@ LIBS += lib/libfdt/libfdt.o
 LIBS += api/libapi.o
 LIBS += post/libpost.o
 LIBS += test/libtest.o
+ifeq ($(CONFIG_WINDOWS_UPGRADE_SUPPORT),y)
+LIBS += uip/libuip.o
+endif
+ifeq ($(CONFIG_RSA),y)
+LIBS += lib_rsa/librsa.o
+endif
 
 ifneq ($(CONFIG_AM33XX)$(CONFIG_OMAP34XX)$(CONFIG_OMAP44XX)$(CONFIG_OMAP54XX),)
 LIBS += $(CPUDIR)/omap-common/libomap-common.o
@@ -511,6 +520,10 @@ ifeq ($(CONFIG_KALLSYMS),y)
 endif
 
 $(OBJS):	depend
+	@sed -i "s/version:.*</version:`date +%y.%m.%d`</g" $(TOPDIR)/httpd/vendors/cleanwrt/uboot.html
+	@sed -i "s/version:.*</version:`date +%y.%m.%d`</g" $(TOPDIR)/httpd/vendors/cleanwrt/art.html
+	@sed -i "s/version:.*</version:`date +%y.%m.%d`</g" $(TOPDIR)/httpd/vendors/cleanwrt/index.html
+	@sed -i "s/version:.*</version:`date +%y.%m.%d`</g" $(TOPDIR)/httpd/vendors/cleanwrt/flashing.html
 		$(MAKE) -C $(CPUDIR) $(if $(REMOTE_BUILD),$@,$(notdir $@))
 
 $(LIBS):	depend $(SUBDIR_TOOLS)

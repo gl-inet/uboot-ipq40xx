@@ -23,6 +23,7 @@
 #include <asm/arch-ipq40xx/smem.h>
 #include <mmc.h>
 #include "ipq40xx_cdp.h"
+#include "gl/gl_ipq40xx_api.h"
 
 #define DLOAD_MAGIC_COOKIE	0x10
 #define XMK_STR(x)		#x
@@ -484,6 +485,21 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%x 0x%x",
 					CONFIG_SYS_LOAD_ADDR,
 					(uint)disk_info.start, (uint)disk_info.size);
+		}else if(blk_dev->part_type == PART_TYPE_DOS){
+			//boot dos/mbr image, read 16MB kernel image
+			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%x 0x%x",
+					CONFIG_SYS_LOAD_ADDR,
+					dos_boot_part_lba_start, dos_boot_part_size);
+		}
+		else {
+			printf("No GPT kernel partition, booting from NOR...\n");
+			gboard_param->nor_emmc_available = 0;
+			snprintf(runcmd, sizeof(runcmd),
+				"sf probe &&"
+				"sf read 0x%x 0x%x 0x%x && ",
+				CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size);
+			if((uint)sfi->hlos.offset==0xbad0ff5e)
+				return -1;
 		}
 
 #endif   	/* CONFIG_QCA_MMC   */
@@ -499,6 +515,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		return CMD_RET_FAILURE;
 	}
 
+	LED_BOOTING();
 	dcache_enable();
 
 	ret = genimg_get_format((void *)CONFIG_SYS_LOAD_ADDR);

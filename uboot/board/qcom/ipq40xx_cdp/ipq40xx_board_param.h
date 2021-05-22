@@ -727,7 +727,7 @@ gpio_func_data_t rgmii_gpio_cfg[] = {
 	},
 };
 
-gpio_func_data_t sw_gpio_bga[] = {
+gpio_func_data_t ap_dk04_1_c3_sw_gpio_bga[] = {
 	{
 		.gpio = 6,
 		.func = 1,
@@ -749,7 +749,7 @@ gpio_func_data_t sw_gpio_bga[] = {
 		.gpio_pu_res = GPIO_PULL_RES2
 	},
 	{
-		.gpio = 40,
+		.gpio = 41,
 		.func = 0,
 		.pull = GPIO_PULL_DOWN,
 		.drvstr = GPIO_2MA,
@@ -759,7 +759,7 @@ gpio_func_data_t sw_gpio_bga[] = {
 		.gpio_pu_res = GPIO_PULL_RES2
 	},
 	{
-		.gpio = 52, //wifi
+		.gpio = 57, //power2
 		.func = 0,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_2MA,
@@ -769,7 +769,7 @@ gpio_func_data_t sw_gpio_bga[] = {
 		.gpio_pu_res = GPIO_PULL_RES2
 	},
 	{
-		.gpio = 49, //mesh
+		.gpio = 60, //power
 		.func = 0,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_2MA,
@@ -779,7 +779,7 @@ gpio_func_data_t sw_gpio_bga[] = {
 		.gpio_pu_res = GPIO_PULL_RES2
 	},
 	{
-		.gpio = 48, //power
+		.gpio = 61, //power2
 		.func = 0,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_2MA,
@@ -788,6 +788,93 @@ gpio_func_data_t sw_gpio_bga[] = {
 		.gpio_od_en = GPIO_OD_DISABLE,
 		.gpio_pu_res = GPIO_PULL_RES2
 	},
+	{
+		.gpio = 66, //power
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+
+};
+
+gpio_func_data_t sw_gpio_bga[] = { //s1300 ap_dk04.1-c1
+	{
+		.gpio = 6,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 7,
+		.func = 1,
+		.pull = GPIO_PULL_UP,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_DISABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 41,
+		.func = 0,
+		.pull = GPIO_PULL_DOWN,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+                /* overriding the default configuration of gpio52 */
+                .gpio = 52,
+                .func = 0,
+                .pull = GPIO_PULL_UP,
+                .drvstr = GPIO_2MA,
+                .oe = GPIO_OE_DISABLE,
+                .gpio_vm = GPIO_VM_ENABLE,
+                .gpio_od_en = GPIO_OD_DISABLE,
+                .gpio_pu_res = GPIO_PULL_RES2
+        },
+	/*S1300 gpio led status, set by writel(GPIO_OUT, GPIO_IN_OUT_ADDR(2)); */
+	{
+		.gpio = 60, //wifi
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 59, //mesh
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 57, //power
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+
 };
 
 gpio_func_data_t ap_dk04_1_c2_sw_gpio_bga[] = {
@@ -909,6 +996,37 @@ gpio_func_data_t ap_dk07_1_c1_sw_gpio_bga[] = {
 		.gpio_od_en = GPIO_OD_DISABLE,
 		.gpio_pu_res = GPIO_PULL_RES2
 	},
+	/*S1300-dk07 based: gpio led status, set by writel(GPIO_OUT, GPIO_IN_OUT_ADDR(2)); */
+	{
+		.gpio = 60, //wifi
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 59, //mesh
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 57, //power
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
 };
 
 gpio_func_data_t db_dk_2_1_sw_gpio_bga[] = {
@@ -965,6 +1083,7 @@ gpio_func_data_t sw_gpio_qfn[] = {
 		.gpio_od_en = GPIO_OD_DISABLE,
 		.gpio_pu_res = GPIO_PULL_RES2
 	},
+	/*B1300 gpio led status, set by writel(GPIO_OUT, GPIO_IN_OUT_ADDR(2)); */
 	{
 		.gpio = 2, //wifi
 		.func = 0,
@@ -1020,6 +1139,57 @@ gpio_func_data_t ap_dk01_1_c2_sw_gpio_qfn[] = {
 	},
 	{
 		.gpio = 62,
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	/*ap1300 gpio led status, set by writel(GPIO_OUT, GPIO_IN_OUT_ADDR(2)); */
+	{
+		.gpio = 0, //analogue switch
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 1, //lte reset
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 2, //power led
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 3, //lte led
+		.func = 0,
+		.pull = GPIO_NO_PULL,
+		.drvstr = GPIO_2MA,
+		.oe = GPIO_OE_ENABLE,
+		.gpio_vm = GPIO_VM_ENABLE,
+		.gpio_od_en = GPIO_OD_DISABLE,
+		.gpio_pu_res = GPIO_PULL_RES2
+	},
+	{
+		.gpio = 4, //watchdog feed
 		.func = 0,
 		.pull = GPIO_NO_PULL,
 		.drvstr = GPIO_2MA,
@@ -1378,7 +1548,7 @@ board_ipq40xx_params_t board_params[] = {
 		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
-		.nor_emmc_available = 0,
+		.nor_emmc_available = 1,
 #ifdef CONFIG_IPQ40XX_PCI
 		.pcie_cfg = {
 			pcie_board_cfg(0),
@@ -1450,17 +1620,26 @@ board_ipq40xx_params_t board_params[] = {
 		.spi_nor_gpio_count = ARRAY_SIZE(spi_nor_bga),
 		.nand_gpio = nand_gpio_bga,
 		.nand_gpio_count = ARRAY_SIZE(nand_gpio_bga),
-		.sw_gpio = sw_gpio_bga,
+		.sw_gpio = ap_dk04_1_c3_sw_gpio_bga,
 		.sw_gpio_count = ARRAY_SIZE(sw_gpio_bga),
 		.edma_cfg = {
 			ipq40xx_edma_cfg(0, 5, PSGMII,
 					0, 1, 2, 3, 4)
 		},
+		.uart_cfg = &uart2,
+#ifdef CONFIG_IPQ40XX_I2C
+		.i2c_cfg = &i2c0,
+#endif
 		.mmc_gpio = mmc_ap_dk04,
 		.mmc_gpio_count = ARRAY_SIZE(mmc_ap_dk04),
 		.spi_nand_available = 0,
 		.nor_nand_available = 0,
 		.nor_emmc_available = 1,
+#ifdef CONFIG_IPQ40XX_PCI
+		.pcie_cfg = {
+			pcie_board_cfg(0),
+		},
+#endif
 		.dtb_config_name = { "config@3", "config@ap.dk04.1-c3" },
 	},
 	{

@@ -53,9 +53,6 @@
 #include <post.h>
 #include <logbuff.h>
 
-#include <asm/arch-qcom-common/gpio.h>
-
-
 #ifdef CONFIG_BITBANGMII
 #include <miiphy.h>
 #endif
@@ -493,8 +490,8 @@ void board_init_r(gd_t *id, ulong dest_addr)
 	ulong flash_size;
 #endif
 	bd_t *bd;
-	bd = gd->bd;
 
+	bd = gd->bd;
 	gd = id;
 
 	gd->flags |= GD_FLG_RELOC;	/* tell others: relocation done */
@@ -592,7 +589,10 @@ void board_init_r(gd_t *id, ulong dest_addr)
 	/* initialize environment */
 	env_relocate();
 
+	/* IP Address */
 	bd->bi_ip_addr = getenv_IPaddr("ipaddr");
+
+
 #if defined(CONFIG_CMD_PCI) || defined(CONFIG_PCI)
 	arm_pci_init();
 #endif
@@ -679,10 +679,6 @@ void board_init_r(gd_t *id, ulong dest_addr)
 		setenv("mem", (char *)memsz);
 	}
 #endif
-
-	all_led_off();
-	power_led_on();
-
 
 	/* main_loop() can return to retry autoboot, if so just run it again. */
 	for (;;) {

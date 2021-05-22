@@ -43,17 +43,14 @@
 #include <linux/ctype.h>
 #include <menu.h>
 
-#include <asm/arch-qcom-common/gpio.h>
-
-#if defined(CONFIG_CMD_HTTPD)
-extern int NetLoopHttpd(void);
-#endif
-
+#include "gl/gl_ipq40xx_api.h"
+#include "ipq40xx_cdp.h"
 
 #if defined(CONFIG_SILENT_CONSOLE) || defined(CONFIG_POST) || \
 	defined(CONFIG_CMDLINE_EDITING) || defined(CONFIG_IPQ_ETH_INIT_DEFER)
 DECLARE_GLOBAL_DATA_PTR;
 #endif
+
 
 /*
  * Board-specific Platform code can reimplement show_boot_progress () if needed
@@ -64,6 +61,10 @@ void show_boot_progress (int val) __attribute__((weak, alias("__show_boot_progre
 #if defined(CONFIG_UPDATE_TFTP)
 int update_tftp (ulong addr);
 #endif /* CONFIG_UPDATE_TFTP */
+
+#ifdef CONFIG_HTTPD
+int g_http_update = 0;
+#endif
 
 #define MAX_DELAY_STOP_STR 32
 
@@ -214,6 +215,14 @@ int abortboot(int bootdelay)
 static int menukey = 0;
 #endif
 
+
+#ifdef CONFIG_WINDOWS_UPGRADE_SUPPORT
+extern char gl_set_uip_info();
+extern void gl_upgrade_probe();
+extern void gl_upgrade_listen();
+extern char gl_probe_upgrade;
+#endif
+
 #ifndef CONFIG_MENU
 static inline
 #endif
@@ -227,6 +236,10 @@ int abortboot(int bootdelay)
 	char c;
 	char *envstopstr;
 	char stopstr[16] = { 0 };
+
+#ifdef CONFIG_WINDOWS_UPGRADE_SUPPORT
+    udelay(3000000);
+#endif
 
 	if (bootdelay <= 0)
 		return abort;
@@ -253,7 +266,7 @@ int abortboot(int bootdelay)
 	 */
 	if (bootdelay >= 0) {
 		if (tstc()) {	/* we got a key press	*/
-			(void) getc();	/* consume input	*/
+			(void) getc();  /* consume input	*/
 			puts ("\b\b\b 0");
 			abort = 1;	/* don't auto boot	*/
 		}
@@ -261,29 +274,34 @@ int abortboot(int bootdelay)
 #endif
 
 #if defined(CONFIG_MENUPROMPT)
-	printf(CONFIG_MENUPROMPT, bootdelay);
+		printf(CONFIG_MENUPROMPT, bootdelay);
 #else
-	/*
-	 * Use custom CONFIG_MENUPROMPT if bootstopkey
-	 * string contains nonprintable characters (e.g. ESC)
-	 */
-#ifdef CONFIG_DEBUG
-	envstopstr = NULL; //debug
-#endif
-	if (envstopstr)
-		printf("Hit \"%s\" key to stop booting: %2d", envstopstr, bootdelay);
-		//printf("Please input your password to stop booting: %2d", bootdelay);
-	else
-		printf("Hit any key to stop booting: %2d", bootdelay);
+		/*
+		 * Use custom CONFIG_MENUPROMPT if bootstopkey
+		 * string contains nonprintable characters (e.g. ESC)
+		 */
+		if (envstopstr)
+			printf("Hit \"%s\" key to stop booting: %2d", envstopstr, bootdelay);
+			//printf("Please input your password to stop booting: %2d", bootdelay);
+		else
+			printf("Hit any key to stop booting: %2d", bootdelay);
 #endif
 
 	while ((bootdelay > 0) && (!abort)) {
 		int i;
-
+#ifdef CONFIG_WINDOWS_UPGRADE_SUPPORT
+        gl_probe_upgrade = gl_set_uip_info();
+#endif
 		--bootdelay;
 
 		/* delay 500 * 2 ms */
-		for (i = 0; !abort && i < 500; ++i, udelay(2000)) {
+		for (i = 0; i < 200; ++i, udelay(10000)) {
+#ifdef CONFIG_WINDOWS_UPGRADE_SUPPORT
+            if(gl_probe_upgrade){
+                gl_upgrade_probe();
+                gl_upgrade_listen();
+            }
+#endif
 			if (!tstc() || tested)
 				continue;
 
@@ -308,6 +326,9 @@ int abortboot(int bootdelay)
 				if (strncmp(stopstr, "gl", strlen("gl")) == 0) {
 					abort = 1;
 					bootdelay = 0;
+#ifdef CONFIG_WINDOWS_UPGRADE_SUPPORT
+                    gl_probe_upgrade = 0;
+#endif
 					break;		
 				}
 			}
@@ -324,13 +345,13 @@ int abortboot(int bootdelay)
 		}
 		printf("\b\b%2d", bootdelay);
 	}
-
+	puts("\n\n");
 
 #ifdef CONFIG_IPQ_ETH_INIT_DEFER
-	if (abort) {
-		puts("\nNet:   ");
-		eth_initialize(gd->bd);
-	}
+	//if (abort) {
+	//puts("\nNet:   ");
+	//eth_initialize(gd->bd);
+	//}
 #endif
 
 	putc('\n');
@@ -345,219 +366,8 @@ int abortboot(int bootdelay)
 # endif	/* CONFIG_AUTOBOOT_KEYED */
 #endif	/* CONFIG_BOOTDELAY >= 0  */
 
+
 /****************************************************************************/
-#ifdef CONFIG_GL_CHECK_ART
-int find_calibration_data(void)
-{
-	int ret = -1;
-	volatile unsigned short *cal_2g_data = NULL;
-	volatile unsigned short *cal_5g_data = NULL;
-
-	char cmd[128] = {0};
-	sprintf(cmd, "sf probe && sf read 0x84000000 0x%x 0x%x", CONFIG_ART_START, CONFIG_ART_SIZE);
-	run_command(cmd, 0);
-
-	cal_2g_data = (volatile unsigned short *)(0x84000000+0x1000);
-	cal_5g_data = (volatile unsigned short *)(0x84000000+0x5000);
-
-	//printf("cal_2g_data = 0x%x, cal_5g_data = 0x%x\n", *cal_2g_data, *cal_5g_data);
-	printf("Checking calibration status...\n");
-
-	if (*cal_2g_data == 0x2f20 && *cal_5g_data == 0x2f20) {
-		printf("Device have calibrated,checking test status...\n");
-		ret = 0;
-	} else {
-		printf("Device haven't calibrated,booting the calibration firmware...\n");
-		ret = -1;
-	}
-	
-	return ret;
-}
-
-int check_test(void)
-{
-	int ret = 0;
-	volatile unsigned char *f1f = NULL;
-	volatile unsigned char *f2i = NULL;
-	volatile unsigned char *f3r = NULL;
-	volatile unsigned char *f4s = NULL;
-	volatile unsigned char *f5t = NULL;
-	volatile unsigned char *f6t = NULL;
-	volatile unsigned char *f7e = NULL;
-	volatile unsigned char *f8s = NULL;
-	volatile unsigned char *f9t = NULL;
-
-	volatile unsigned char *s0s = NULL;
-	volatile unsigned char *s1e = NULL;
-	volatile unsigned char *s2c = NULL;
-	volatile unsigned char *s3o = NULL;
-	volatile unsigned char *s4n = NULL;
-	volatile unsigned char *s5d = NULL;
-	volatile unsigned char *s6t = NULL;
-	volatile unsigned char *s7e = NULL;
-	volatile unsigned char *s8s = NULL;
-	volatile unsigned char *s9t = NULL;
-
-	char cmd[128] = {0};
-	sprintf(cmd, "sf read 0x84000000 0x%x 16 && sf read 0x84000010 0x%x 16",
-		(CONFIG_ART_START + 0x50), (CONFIG_ART_START + 0x60));
-	run_command(cmd, 0);
-
-	f1f = (volatile unsigned char *)0x84000000;
-	f2i = (volatile unsigned char *)0x84000001;
-	f3r = (volatile unsigned char *)0x84000002;
-	f4s = (volatile unsigned char *)0x84000003;
-	f5t = (volatile unsigned char *)0x84000004;
-	f6t = (volatile unsigned char *)0x84000005;
-	f7e = (volatile unsigned char *)0x84000006;
-	f8s = (volatile unsigned char *)0x84000007;
-	f9t = (volatile unsigned char *)0x84000008;
-
-	s0s = (volatile unsigned char *)0x84000010;
-	s1e = (volatile unsigned char *)0x84000011;
-	s2c = (volatile unsigned char *)0x84000012;
-	s3o = (volatile unsigned char *)0x84000013;
-	s4n = (volatile unsigned char *)0x84000014;
-	s5d = (volatile unsigned char *)0x84000015;
-	s6t = (volatile unsigned char *)0x84000016;
-	s7e = (volatile unsigned char *)0x84000017;
-	s8s = (volatile unsigned char *)0x84000018;
-	s9t = (volatile unsigned char *)0x84000019;
-
-	
-	if (*f1f==0x66 && *f2i==0x69 && *f3r==0x72 && *f4s==0x73 && \
-			*f5t==0x74 && *f6t==0x74 && *f7e==0x65 && *f8s==0x73 && \
-			*f9t==0x74 && \
-			*s0s==0x73 && *s1e==0x65 && *s2c==0x63 && *s3o==0x6f && \
-			*s4n==0x6e && *s5d==0x64 && *s6t==0x74 && *s7e==0x65 && \
-			*s8s==0x73 && *s9t==0x74) {
-		printf("Device haven tested, checking MAC info...\n");
-		ret = 0;
-	} else {
-		printf("Device haven't tested, please test device in calibration firmware...\n");
-		ret = -1;
-	}
-
-	return ret;
-
-}
-
-int check_config(void)
-{
-	int i = 0;
-	u8 addr[6];
-	u8 addr_tmp[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-	volatile unsigned char *tmp = NULL;
-
-	char cmd[128] = {0};
-	sprintf(cmd, "sf read 0x84000000 0x%x 16 && sf read 0x84000010 0x%x 16 && sf read 0x84000020 0x%x 16", 
-		CONFIG_ART_START, (CONFIG_ART_START+0x1000), (CONFIG_ART_START+0x5000));
-	run_command(cmd, 0);
-
-	/*check eth0 mac*/
-	for (i=0; i<6; i++) {
-		tmp = (volatile unsigned char *)0x84000000 + i;
-		addr[i] = *tmp;
-	}
-	//printf("eth0: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
-	if (!memcmp(addr, addr_tmp, 6)) {
-		printf("Device don't have eth0 MAC info, please write MAC in calibration firmware...\n");
-		return -1;
-	}
-
-	/*check eth1 mac*/
-	for (i=0; i<6; i++) {
-		tmp = (volatile unsigned char *)0x84000006 + i;
-		addr[i] = *tmp;
-	}
-	//printf("eth1: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
-	if (!memcmp(addr, addr_tmp, 6)) {
-		printf("Device don't have eth1 MAC info, please write MAC in calibration firmware...\n");
-		return -1;
-	}
-
-	/*check 2G mac*/
-	for (i=0; i<6; i++) {
-		tmp = (volatile unsigned char *)0x84000016 + i;
-		addr[i] = *tmp;
-	}
-	//printf("2G: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
-	if (!memcmp(addr, addr_tmp, 6)) {
-		printf("Device don't have 2G MAC info, please write MAC in calibration firmware...\n");
-		return -1;
-	}
-
-	/*check 5G mac*/
-	for (i=0; i<6; i++) {
-		tmp = (volatile unsigned char *)0x84000026 + i;
-		addr[i] = *tmp;
-	}
-	//printf("5G: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
-	if (!memcmp(addr, addr_tmp, 6)) {
-		printf("Device don't have 5G MAC info, please write MAC in calibration firmware...\n");
-		return -1;
-	}
-	printf("Device have MAC info, starting firmware...\n\n");
-	
-	return 0;
-}
-
-// we use this so that we can do without the ctype library
-#define is_digit(c)				((c) >= '0' && (c) <= '9')
-/*static int atoi(const char *s){
-	int i = 0;
-
-	while(is_digit(*s)){
-		i = i * 10 + *(s++) - '0';
-	}
-
-	return(i);
-}*/
-extern int TftpdownloadStatus;
-extern int do_ping (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
-extern int do_checkout_firmware(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
-void auto_update_by_tftp(void)
-{
-	char cmd[128] = {0};
-	int argc = 2;
-	char *argv[2];
-	argv[0] = "2";
-	argv[1] = getenv("serverip");
-
-	udelay( 1000000 );
-	if ( do_ping(NULL, 0, argc, argv) != 0) {
-		return;
-	}
-
-	sprintf(cmd, "tftpboot 0x84000000 $fw_name");
-	if ( run_command(cmd, 0) != 0 ) {
-		return;
-	}
-
-	if ( do_checkout_firmware(NULL, 0, 0, NULL) ) {
-		sprintf(cmd, "sf probe && sf erase 0x%x 0x%x && sf write 0x84000000 0x%x $filesize",
-			CONFIG_FIRMWARE_START, CONFIG_FIRMWARE_SIZE, CONFIG_FIRMWARE_START);
-	} else {
-		sprintf(cmd, "sf probe && imgaddr=0x84000000 && source $imgaddr:script");
-	}
-	run_command(cmd, 0);
-}
-
-
-void uboot_env_restore(void)
-{
-	char *version = getenv("version");
-	if ( !version || strcmp(version, CONFIG_VERSION) ) {
-		char cmd[16];
-		sprintf(cmd, "env default -f; env save");
-		run_command(cmd, 0);
-		udelay( 1000000 );
-
-		do_reset(NULL, 0, 0, NULL);
-	}
-}
-#endif
-
 void main_loop (void)
 {
 #ifndef CONFIG_SYS_HUSH_PARSER
@@ -665,94 +475,162 @@ void main_loop (void)
 
 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
 
-/***********************http download **************************/
-#ifdef CONFIG_CMD_HTTPD
-	//printf("gpio status = %d, %s\n", get_gpio_status(), getenv("serverip"));
+	/* eth_initialize(gd->bd); */
+	puts("\nNet:   ");
+	eth_initialize(gd->bd);
+
 	int counter = 0;
-	if ( get_gpio_status() == 0 ) {
-		/* eth_initialize(gd->bd); */
-		puts("\nNet:   ");
-		eth_initialize(gd->bd);
-		gd->flags &= ~GD_FLG_SILENT;
-		
-		printf( "\nPress RESET button for more than 5 seconds to run web failsafe mode\n\n" );
+	LED_INIT();
+#ifdef CONFIG_HTTPD
+	counter = 0;
+	/*http download*/
+	int gpio_reset_btn=0;
+	switch (gboard_param->machid) {
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
+		gpio_reset_btn=18;
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+		gpio_reset_btn=40;
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+		gpio_reset_btn=63;
+		break;
+	default:
+		break;
+	}
+
+	if (gpio_get_value(gpio_reset_btn) == GPIO_VAL_BTN_PRESSED) {
+		printf( "\nPress press RESET button for more than 5 seconds to run web failsafe mode\n\n" );
 		printf( "RESET button is pressed for: %2d second(s)", counter);
 	}
-	while ( get_gpio_status() == 0 ) {
-		if ( counter < 5 ) {
-			wifi_led_on();
-			udelay( 1000000 );
-			wifi_led_off();
-			udelay( 1000000 );
-		} else if ( counter == 5 ) {
-			wifi_led_off();
-			mesh_led_on();
-			udelay( 1000000 );
-		} else if ( counter > 20 ) {
+	while (gpio_get_value(gpio_reset_btn) == GPIO_VAL_BTN_PRESSED) {
+
+		switch (gboard_param->machid) {
+		case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
+			gpio_set_value(GPIO_S1300_WIFI_LED, 1);
 			break;
-		} else {
-			udelay( 1000000 );
+		case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+			gpio_set_value(GPIO_B2200_POWER_WHITE_LED, 0);
+			break;
+		case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+			gpio_set_value(GPIO_B1300_WIFI_LED, 1);
+			break;
+		case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+			gpio_set_value(GPIO_AP1300_POWER_LED, 1);
+			break;
+		default:
+			break;
 		}
+		udelay( 1000000 );
 	
+		switch (gboard_param->machid) {
+		case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
+			gpio_set_value(GPIO_S1300_WIFI_LED, 0);
+			break;
+		case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+			gpio_set_value(GPIO_B2200_POWER_WHITE_LED, 1);
+			break;
+		case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+			gpio_set_value(GPIO_B1300_WIFI_LED, 0);
+			break;
+		case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+			gpio_set_value(GPIO_AP1300_POWER_LED, 0);
+			break;
+		default:
+			break;
+		}
+
+		udelay( 1000000 );
+
 		counter++;
+
+		//printf("%2d second(s), %ld\n", counter, get_timer(0));
 		printf("\b\b\b\b\b\b\b\b\b\b\b\b%2d second(s)", counter);
 
+		if ( counter >= 5 ){
+			break;
+		}
 
-		//if ( ctrlc() ) {
-		//	goto mainloop:
-		//}
+		if (ctrlc()) {
+			goto mainloop;
+		}
+	}
+	
+	if (counter > 4) {
+	
+		printf( "\n\nRESET button was pressed for %d seconds\nHTTP server is starting for firmware update...\n\n", counter );
+	switch (gboard_param->machid) {
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C1:
+		gpio_set_value(GPIO_S1300_MESH_LED, 1);
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
+		gpio_set_value(GPIO_B2200_POWER_WHITE_LED, 0);
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
+		gpio_set_value(GPIO_B1300_MESH_LED, 1);
+		break;
+	case MACH_TYPE_IPQ40XX_AP_DK01_1_C2:
+		gpio_set_value(GPIO_AP1300_POWER_LED, 1);
+		break;
+	default:
+		break;
 	}
 
-	if ( counter > 20 ) {
-#ifdef CONFIG_RESET_DEFAULT_ENV
-		all_led_on();
-		udelay( 1000000 );
+		g_http_update = 1;
+		goto SKIPBOOT;
 
-		char cmd[16];
-		sprintf(cmd, "env default -f; env save");
-		run_command(cmd, 0);
-		udelay( 1000000 );
-		/* reset the board */
-		do_reset(NULL, 0, 0, NULL);
-#endif
-	} else if ( counter > 4 && counter < 20 ) {
-		printf( "\n\nRESET button was pressed for %d seconds\nHTTP server is starting for firmware update...\n\n", counter );
-		udelay( 1000000 );
-		NetLoopHttpd();	
 	} else if ((counter <= 4) && (counter > 0)) {
 		printf( "\n\nCatution: RESET button wasn't pressed or not long enough!\nContinuing normal boot...\n\n" );
 	} else {
 	}
+	if(gboard_param->machid==MACH_TYPE_IPQ40XX_AP_DK01_1_C2)
+		gpio_set_value(GPIO_AP1300_POWER_LED, 1);
 #endif
-/********************************************************************************************/
-	uboot_env_restore();
-
 	if (bootdelay >= 0 && s && !abortboot (bootdelay)) {
-#ifdef CONFIG_GL_CHECK_ART
+#ifdef CONFIG_WINDOWS_UPGRADE_SUPPORT
+        gl_probe_upgrade = 0;
+#endif
+
+#ifdef CHECK_ART_REGION
+		/*tftp download*/
 		if (!find_calibration_data()) {
-			if (/*!check_calibration() &&*/!check_test() && !check_config()) {
+			if (!check_test() && !check_config()) {
 				int tftp_upgrade_en;
 				char *tmp;
 				tmp = getenv("tftp_upgrade");
 				tftp_upgrade_en = tmp ? (int)simple_strtol(tmp, NULL, 10) : 0;
 				if(tftp_upgrade_en==1)
-					auto_update_by_tftp();
-				run_command("bootipq 0x84000000",0);//start standard fw
-			} 
+				auto_update_by_tftp();
+			}
 		}
 #endif
-# ifdef CONFIG_AUTOBOOT_KEYED
+
+#ifdef CONFIG_AUTOBOOT_KEYED
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
-# endif
+#endif
 
-		run_command(s, 0);
+		int ret = run_command(s, 0);
+		if (ret) {
+			/* reset the board */
+			udelay( 1000000 );
+			do_reset( NULL, 0, 0, NULL );
+		}
 
-# ifdef CONFIG_AUTOBOOT_KEYED
+#ifdef CONFIG_AUTOBOOT_KEYED
 		disable_ctrlc(prev);	/* restore Control C checking */
-# endif
+#endif
 	}
-
-# ifdef CONFIG_MENUKEY
+	
+#ifdef CONFIG_HTTPD
+SKIPBOOT:
+	if (g_http_update) {
+		udelay(6000000);
+		HttpdLoop();
+	}
+#endif
+	
+#ifdef CONFIG_MENUKEY
 	if (menukey == CONFIG_MENUKEY) {
 		s = getenv("menucmd");
 		if (s)
@@ -764,6 +642,8 @@ void main_loop (void)
 	/*
 	 * Main Loop for Monitor Command Processing
 	 */
+mainloop:
+
 #ifdef CONFIG_SYS_HUSH_PARSER
 	parse_file_outer();
 	/* This point is never reached */
@@ -1739,11 +1619,10 @@ int run_command(const char *cmd, int flag)
 
 /****************************************************************************/
 
-#if defined(CONFIG_CMD_RUN)
-int do_run (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+#if (defined(CONFIG_CMD_RUN))
+int do_run_origin (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	int i;
-
 	if (argc < 2)
 		return CMD_RET_USAGE;
 

@@ -35,11 +35,13 @@ COBJS	:= $(COBJS-y)
 SRCS 	:= $(COBJS:.o=.c)
 OBJS 	:= $(addprefix $(obj),$(COBJS))
 
-all: $(LIB)
+all:	$(LIB)
 
 fs.c:   fsdata.c
+
 fsdata.c:
 	./vendors/makefsdatac $(DEVICE_VENDOR)
+
 $(LIB):	$(obj).depend $(OBJS)
 	$(call cmd_link_o_target, $(OBJS))
 

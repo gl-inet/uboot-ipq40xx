@@ -196,6 +196,8 @@ typedef struct image_header {
 	uint8_t		ih_name[IH_NMLEN];	/* Image Name		*/
 } image_header_t;
 
+typedef unsigned long int ulong;
+
 typedef struct image_info {
 	ulong		start, end;		/* start/end of blob */
 	ulong		image_start, image_len; /* start of image within blob, len of image */

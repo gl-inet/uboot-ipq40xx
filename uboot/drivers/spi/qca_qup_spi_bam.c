@@ -47,7 +47,7 @@ DECLARE_GLOBAL_DATA_PTR;
  */
 static unsigned int cs_gpio_array_dk01[NUM_PORTS][NUM_CS] = {
 	{
-		QUP0_SPI_CS_0, QUP0_SPI_CS_1_DK01,
+		QUP0_SPI_CS_0, QUP0_SPI_CS_1_DK01_AP1300,
 	},
 };
 

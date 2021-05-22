@@ -57,8 +57,13 @@
 #include <malloc.h>
 #include <common.h>
 
-
+#include "httpd.h"
 #include "uipopt.h"
+
+typedef u16_t uip_ip4addr_t[2];
+typedef uip_ip4addr_t uip_ipaddr_t;
+
+
 
 /*-----------------------------------------------------------------------------------*/
 /* First, the functions that should be called from the
@@ -774,6 +779,7 @@ extern volatile u8_t uip_urglen, uip_surglen;
  * file pointers) for the connection. The size of this field is
  * configured in the "uipopt.h" header file.
  */
+
 struct uip_conn {
   u16_t ripaddr[2];   /**< The IP address of the remote host. */
   
@@ -801,6 +807,7 @@ struct uip_conn {
 			 segment sent. */
 
   /** The application state. */
+  //u8_t appstate[UIP_APPSTATE_SIZE];  
   struct httpd_state appstate;
 };
 

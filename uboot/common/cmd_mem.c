@@ -34,6 +34,7 @@
 #endif
 #include <watchdog.h>
 
+
 static int mod_mem(cmd_tbl_t *, int, int, int, char * const []);
 
 /* Display values from last command.
@@ -350,6 +351,7 @@ int do_mem_cp ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 #ifndef CONFIG_SYS_NO_FLASH
+
 	/* check if we are copying to Flash */
 	if ( (addr2info(dest) != NULL)
 #ifdef CONFIG_HAS_DATAFLASH
@@ -592,6 +594,7 @@ int do_mem_loopw (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
  * configured using CONFIG_SYS_ALT_MEMTEST. The complete test loops until
  * interrupted by ctrl-c or by a failure of one of the sub-tests.
  */
+#ifdef CONFIG_CMD_MTEST
 int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	vu_long	*addr, *start, *end;
@@ -941,7 +944,7 @@ int do_mem_mtest (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #endif
 	return 0;	/* not reached */
 }
-
+#endif
 
 /* Modify memory.
  *
@@ -1221,11 +1224,13 @@ U_BOOT_CMD(
 );
 #endif /* CONFIG_LOOPW */
 
+#ifdef CONFIG_CMD_MTEST
 U_BOOT_CMD(
 	mtest,	5,	1,	do_mem_mtest,
 	"simple RAM read/write test",
 	"[start [end [pattern [iterations]]]]"
 );
+#endif
 
 #ifdef CONFIG_MX_CYCLIC
 U_BOOT_CMD(

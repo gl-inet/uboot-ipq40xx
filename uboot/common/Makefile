@@ -132,7 +132,7 @@ COBJS-$(CONFIG_CMD_OTP) += cmd_otp.o
 ifdef CONFIG_PCI
 COBJS-$(CONFIG_CMD_PCI) += cmd_pci.o
 endif
-COBJS-y += cmd_pcmcia.o
+COBJS-$(CONFIG_CMD_PCMCIA) += cmd_pcmcia.o
 COBJS-$(CONFIG_CMD_PORTIO) += cmd_portio.o
 COBJS-$(CONFIG_CMD_PXE) += cmd_pxe.o
 COBJS-$(CONFIG_CMD_REGINFO) += cmd_reginfo.o
@@ -202,6 +202,8 @@ OBJS	:= $(addprefix $(obj),$(COBJS))
 XOBJS	:= $(addprefix $(obj),$(XCOBJS))
 
 CPPFLAGS += -I..
+CPPFLAGS += -I$(TOPDIR)/board/qcom/ipq40xx_cdp -I$(TOPDIR)/board/qcom/common
+CFLAGS += -I$(TOPDIR)/board/qcom/ipq40xx_cdp -I$(TOPDIR)/board/qcom/common
 
 all:	$(LIB) $(XOBJS)
 

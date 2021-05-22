@@ -604,7 +604,7 @@ int do_smeminfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 U_BOOT_CMD(
-	smeminfo,    1,    1,    do_smeminfo,
+	smeminfo,    1,    0,    do_smeminfo,
 	"print SMEM FLASH information",
 	"\n    - print flash details gathered from SMEM\n"
 );

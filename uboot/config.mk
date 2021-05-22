@@ -22,6 +22,7 @@
 #
 
 #########################################################################
+CONFIG_RSA := n
 
 ifeq ($(CURDIR),$(SRCTREE))
 dir :=
@@ -318,15 +319,11 @@ ALL_CFLAGS += $(EXTRA_CPPFLAGS)
 
 ifeq ($(verbose),)
 define compile
-	#echo -e "$(CYN)$(firstword $1)$(GRN) $(subst $(TOPDIR)/,,$(abspath $<))$(RED)"
 	$1
-	#echo -ne "$(NRM)"
 endef
 else
 define compile
-	#echo -e "$(CYN)$1$(RED)"
 	$1
-	#echo -ne "$(NRM)"
 endef
 endif
 

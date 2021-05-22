@@ -35,8 +35,7 @@
 
 #ifndef _U_BOOT_H_
 #define _U_BOOT_H_	1
-
-#if 0
+#if 0 //remove by luoyejiang
 typedef struct bd_info {
     int			bi_baudrate;	/* serial console baudrate */
     ulong	        bi_arch_number;	/* unique id for this board */
@@ -50,31 +49,26 @@ typedef struct bd_info {
 	ulong size;
     }			bi_dram[CONFIG_NR_DRAM_BANKS];
 } bd_t;
+#endif
+typedef struct bd_info {
+	int		bi_baudrate;	/* serial console baudrate */
+	unsigned long	bi_ip_addr;	/* IP Address */
+	unsigned char	bi_enetaddr[6];	/* Ethernet adress */
+	unsigned long	bi_arch_number;	/* unique id for this board */
+	unsigned long	bi_boot_params;	/* where this board expects params */
+	unsigned long	bi_memstart;	/* start of DRAM memory */
+	unsigned long	bi_memsize;	/* size	 of DRAM memory in bytes */
+	unsigned long	bi_flashstart;	/* start of FLASH memory */
+	unsigned long	bi_flashsize;	/* size  of FLASH memory */
+	unsigned long	bi_flashoffset;	/* reserved area for startup monitor */
+	struct				/* RAM configuration */
+    {
+	ulong start;
+	ulong size;
+    } bi_dram[CONFIG_NR_DRAM_BANKS];
+} bd_t;
 
 /* For image.h:image_check_target_arch() */
 #define IH_ARCH_DEFAULT IH_ARCH_ARM
-#else
-typedef struct bd_info {
-        unsigned int    bi_baudrate;    /* serial console baudrate */
-        unsigned long   bi_ip_addr;             /* IP Address */
-        unsigned char   bi_enetaddr[6]; /* Ethernet adress */
-        unsigned long   bi_arch_number; /* unique id for this board */
-        unsigned long   bi_boot_params; /* where this board expects params */
-        unsigned long   bi_memstart;    /* start of DRAM memory */
-        unsigned long   bi_memsize;             /* size  of DRAM memory in bytes */
-        unsigned long   bi_flashstart;  /* start of FLASH memory */
-        unsigned long   bi_flashsize;   /* size  of FLASH memory */
-        unsigned long   bi_flashoffset; /* reserved area for startup monitor */
-        unsigned long   bi_cfg_hz;
-	    struct				/* RAM configuration */
-	    {
-		ulong start;
-		ulong size;
-	    }			bi_dram[CONFIG_NR_DRAM_BANKS];
-} bd_t;
 
-#define bi_env_data bi_env->data
-#define bi_env_crc  bi_env->crc
-#define IH_ARCH_DEFAULT IH_ARCH_ARM
-#endif
 #endif	/* _U_BOOT_H_ */

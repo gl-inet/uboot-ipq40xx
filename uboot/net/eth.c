@@ -424,7 +424,7 @@ int eth_init(bd_t *bis)
 		if (eth_current->init(eth_current, bis) >= 0) {
 			eth_current->state = ETH_STATE_ACTIVE;
 
-			return 0;
+			return 1;
 		}
 		debug("FAIL\n");
 

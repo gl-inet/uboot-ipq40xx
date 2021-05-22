@@ -242,7 +242,6 @@ extern int eth_rx (void)
 	unsigned int *addr;
 	unsigned int rxstatus, lastrxlen;
 	char *pa;
-
 	/* RXBR is 1, data block was received */
 	if ((GET_EADDR (NETARM_ETH_GEN_STAT) & NETARM_ETH_GST_RXBR) == 0)
 		return 0;

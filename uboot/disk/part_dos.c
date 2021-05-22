@@ -34,6 +34,7 @@
 #include <command.h>
 #include <ide.h>
 #include "part_dos.h"
+#include "gl/gl_ipq40xx_api.h"
 
 #if defined(CONFIG_CMD_IDE) || \
     defined(CONFIG_CMD_SATA) || \
@@ -68,6 +69,14 @@ static void print_one_part (dos_partition_t *p, int ext_part_sector, int part_nu
 	printf ("%5d\t\t%10d\t%10d\t%2x%s\n",
 		part_num, lba_start, lba_size, p->sys_ind,
 		(is_extended (p->sys_ind) ? " Extd" : ""));
+
+	if(part_num==1){
+		dos_boot_part_lba_start=lba_start;
+		dos_boot_part_size=lba_size;
+	}
+	if(part_num==3){
+		dos_third_part_lba_start=lba_start;
+	}
 }
 
 static int test_block_type(unsigned char *buffer)

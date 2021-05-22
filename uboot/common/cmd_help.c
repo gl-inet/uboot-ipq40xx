@@ -32,7 +32,7 @@ int do_help(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 }
 
 U_BOOT_CMD(
-	help,	CONFIG_SYS_MAXARGS,	1,	do_help,
+	help,	CONFIG_SYS_MAXARGS,	0,	do_help,
 	"print command description/usage",
 	"\n"
 	"	- print brief description of all commands\n"
@@ -42,7 +42,7 @@ U_BOOT_CMD(
 
 /* This does not use the U_BOOT_CMD macro as ? can't be used in symbol names */
 cmd_tbl_t __u_boot_cmd_question_mark Struct_Section = {
-	"?",	CONFIG_SYS_MAXARGS,	1,	do_help,
+	"?",	CONFIG_SYS_MAXARGS,	0,	do_help,
 	"alias for 'help'",
 #ifdef  CONFIG_SYS_LONGHELP
 	""

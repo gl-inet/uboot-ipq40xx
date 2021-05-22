@@ -310,7 +310,7 @@ static int do_spi_flash(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 		ret = do_spi_flash_berase(argc, argv);
 	else
 		ret = -1;
-
+	
 done:
 	if (ret != -1)
 		return ret;
@@ -320,7 +320,7 @@ usage:
 }
 
 U_BOOT_CMD(
-	sf,	5,	1,	do_spi_flash,
+	sf,	5,	0,	do_spi_flash,
 	"SPI flash sub-system",
 	"probe [[bus:]cs] [hz] [mode]	- init flash device on given SPI bus\n"
 	"				  and chip select\n"
@@ -335,139 +335,3 @@ U_BOOT_CMD(
 	"sf update addr offset len	- erase and write `len' bytes from memory\n"
 	"				  at `addr' to flash at `offset'"
 );
-
-/**
-*0 burning qsdk firmware. 1 burning lede firmware
-*/
-int do_checkout_firmware(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	volatile unsigned char *s = (volatile unsigned char *)0x84000084;
-	volatile unsigned char *c = (volatile unsigned char *)0x84000085;
-	volatile unsigned char *r = (volatile unsigned char *)0x84000086;
-	volatile unsigned char *i = (volatile unsigned char *)0x84000087;
-	volatile unsigned char *p = (volatile unsigned char *)0x84000088;
-	volatile unsigned char *t = (volatile unsigned char *)0x84000089;
-
-	if (*s==0x73 && *c==0x63 && *r==0x72 && *i==0x69 && *p==0x70 && *t==0x74 ) {
-		return 0;
-	}
-	
-	return 1;
-}
-
-int do_burning_qsdk(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	char cmd[128] = {0};
-	
-	printf("do_burning_qsdk\n");
-	sprintf(cmd, "imgaddr=0x84000000 && source $imgaddr:script");
-
-	return run_command(cmd, 0);
-}
-
-int do_burning_lede(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	char cmd[128] = {0};
-	
-	printf("do_burning_lede\n");
-	sprintf(cmd, "sf probe && sf erase 0x%x 0x%x && sf write 0x84000000 0x%x $filesize",
-		CONFIG_FIRMWARE_START, CONFIG_FIRMWARE_SIZE, CONFIG_FIRMWARE_START);
-
-	return run_command(cmd, 0);
-}
-
-void change_ethernet_mac(void)
-{
-	int i;
-	volatile unsigned char *addr = (volatile unsigned char *)0x84000100;
-	volatile unsigned char *src = (volatile unsigned char *)0x84000000;
-
-	for (i=0; i<64; i++) {
-		*addr++ = *src++;
-	}
-}
-
-void change_wifi_mac(void)
-{
-	int i;
-	int checksum_2g = 0;
-	int checksum_5g = 0;
-	volatile unsigned char *wifi_2g = NULL;
-	volatile unsigned short *wifi_2g_checksum = NULL;
-	volatile unsigned char *wifi_5g = NULL;
-	volatile unsigned short *wifi_5g_checksum = NULL;
-	volatile unsigned char *src = (volatile unsigned char *)0x84000070;
-	volatile unsigned short *wifi_2g_art = NULL;
-	volatile unsigned short *wifi_5g_art = NULL;
-
-	wifi_2g = (volatile unsigned char *)0x84001106;
-	wifi_2g_checksum = (volatile unsigned short *)0x84001102;
-	wifi_5g = (volatile unsigned char *)0x84005106;
-	wifi_5g_checksum = (volatile unsigned short *)0x84005102;
-	wifi_2g_art = (volatile unsigned short *)0x84001100;
-	wifi_5g_art = (volatile unsigned short *)0x84005100;
-
-	for (i=0; i<12; i++) {
-		if (i<6)
-		 	*wifi_2g++ = *src++;
-		else
-			*wifi_5g++ = *src++;
-	}
-
-	printf("befour wifi_2g_checksum = %04x, wifi_5g_checksum = %04x\n", *wifi_2g_checksum, *wifi_5g_checksum);
-	*wifi_2g_checksum = *wifi_5g_checksum = -1;
-	printf("after wifi_2g_checksum = %04x, wifi_5g_checksum = %04x\n", *wifi_2g_checksum, *wifi_5g_checksum);
-	
-
-	for (i=0; i<12064; i+=2) {
-	   checksum_2g ^= *wifi_2g_art;
-	   checksum_5g ^= *wifi_5g_art;
-	   wifi_2g_art++;
-	   wifi_5g_art++;
-	}
-	*wifi_2g_checksum = checksum_2g;
-	*wifi_5g_checksum = checksum_5g;
-	printf("after wifi_2g_checksum = %04x\n", *wifi_2g_checksum);
-	printf("after wifi_5g_checksum = %04x\n", *wifi_5g_checksum);
-}
-
-int do_update_config(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	char cmd[128];
-	sprintf(cmd, "sf probe && sf read 0x84000100 0x%x 0x%x", CONFIG_ART_START, CONFIG_ART_SIZE);
-	run_command(cmd, 0);
-	
-	change_ethernet_mac();
-	change_wifi_mac();
-	
-	sprintf(cmd, "sf erase 0x%x 0x%x && sf write 0x84000100 0x%x 0x%x", 
-		CONFIG_ART_START, CONFIG_ART_SIZE, CONFIG_ART_START, CONFIG_ART_SIZE);
-	
-	return run_command(cmd, 0);
-}
-
-U_BOOT_CMD(
-	checkfw,	CONFIG_SYS_MAXARGS,	0,	do_checkout_firmware,
-	"check is qsdk or lede firmware",
-	"[args..]"
-);
-
-U_BOOT_CMD(
-	burning_qsdk,	CONFIG_SYS_MAXARGS,	0,	do_burning_qsdk,
-	"burning qsdk tool",
-	"[args..]"
-);
-
-U_BOOT_CMD(
-	burning_lede,	CONFIG_SYS_MAXARGS,	0,	do_burning_lede,
-	"burning lede tool",
-	"[args..]"
-);
-
-U_BOOT_CMD(
-	updateconfig,	CONFIG_SYS_MAXARGS,	0,	do_update_config,
-	"update config",
-	"[args..]"
-);
-
-

@@ -23,7 +23,7 @@
 
 #include <common.h>
 #include <command.h>
-#include <asm/arch-qcom-common/gpio.h>
+
 
 int do_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -145,19 +145,6 @@ int do_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return expr;
 }
 
-int do_ledon(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	all_led_on();
-	return 0;
-}
-
-int do_ledff(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	all_led_off();
-	return 0;
-}
-
-
 U_BOOT_CMD(
 	test,	CONFIG_SYS_MAXARGS,	1,	do_test,
 	"minimal test like /bin/sh",
@@ -185,17 +172,4 @@ U_BOOT_CMD(
 	"do nothing, successfully",
 	NULL
 );
-
-U_BOOT_CMD(
-	ledon,	CONFIG_SYS_MAXARGS,	1,	do_ledon,
-	"do nothing, successfully",
-	NULL
-);
-
-U_BOOT_CMD(
-	ledoff,	CONFIG_SYS_MAXARGS,	1,	do_ledff,
-	"do nothing, successfully",
-	NULL
-);
-
 

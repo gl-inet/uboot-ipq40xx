@@ -49,6 +49,8 @@
 #include <linux/mtd/mtd.h>
 #include <nand.h>
 #include <jffs2/jffs2.h>
+#include "gl/gl_ipq40xx_api.h"
+#include "ipq40xx_cdp.h"
 
 typedef struct erase_info erase_info_t;
 typedef struct mtd_info	  mtd_info_t;
@@ -56,6 +58,7 @@ typedef struct mtd_info	  mtd_info_t;
 /* support only for native endian JFFS2 */
 #define cpu_to_je16(x) (x)
 #define cpu_to_je32(x) (x)
+static int led_twinkle_counter = 0;
 
 /**
  * nand_erase_opts: - erase NAND flash with support for various options
@@ -181,6 +184,11 @@ int nand_erase_opts(nand_info_t *meminfo, const nand_erase_options_t *opts)
 			 * on (slow) serial consoles
 			 */
 			if (percent != percent_complete) {
+				led_twinkle_counter++;
+				if (led_twinkle_counter == 5) {
+					gpio_twinkle_value(g_gpio_power_led);
+					led_twinkle_counter=0;
+				}
 				percent_complete = percent;
 
 				printf("\rErasing at 0x%llx -- %3d%% complete.",

@@ -447,7 +447,12 @@ enum GmacFrameFilterReg
   GmacPassControl1         = 0x00000040,     /* Does not pass control frames                                         */
   GmacPassControl0         = 0x00000000,     /* Does not pass control frames                                 00      */
 
+#ifdef CONFIG_WINDOWS_UPGRADE_SUPPORT
+  GmacBroadcast		   = 0x00000000,
+#else
   GmacBroadcast		   = 0x00000020,
+#endif
+
   GmacBroadcastDisable     = 0x00000020,     /* (DBF)Disable Rx of broadcast frames     5         RW                 */
   GmacBroadcastEnable      = 0x00000000,     /* Enable broadcast frames                                      0       */
 

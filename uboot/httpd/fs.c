@@ -60,6 +60,21 @@ static u16_t count[FS_NUMFILES];
 #endif /* FS_STATISTICS */
 
 /*-----------------------------------------------------------------------------------*/
+
+#ifdef CONFIG_WINDOWS_UPGRADE_SUPPORT
+static u8_t
+fs_strcmp(const char *str1, const char *str2)
+{
+    u8_t i;
+    for(i=0;;i++)
+    {
+        if(str1[i] !=str2[i])
+            return 1;
+        else if(str1[i]=='\0')
+            return 0;  
+    }
+}
+#else
 static u8_t
 fs_strcmp(const char *str1, const char *str2)
 {
@@ -81,6 +96,8 @@ fs_strcmp(const char *str1, const char *str2)
   ++i;
   goto loop;
 }
+#endif
+
 /*-----------------------------------------------------------------------------------*/
 int
 fs_open(const char *name, struct fs_file *file)

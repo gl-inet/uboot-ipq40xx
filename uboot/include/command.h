@@ -66,6 +66,7 @@ extern cmd_tbl_t  __u_boot_cmd_end;
 
 #if defined(CONFIG_CMD_RUN)
 extern int do_run(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
+extern int do_run_origin(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
 #endif
 
 /* common/command.c */

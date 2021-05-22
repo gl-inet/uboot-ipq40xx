@@ -3533,6 +3533,7 @@ static char * make_string(char ** inp)
 }
 
 #ifdef __U_BOOT__
+#ifdef CONFIG_CMD_SHOWVAR
 int do_showvar (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int i, k;
@@ -3578,6 +3579,6 @@ U_BOOT_CMD(
 	"showvar name ...\n"
 	"    - print value of hushshell variable 'name'"
 );
-
+#endif
 #endif
 /****************************************************************************/

@@ -601,9 +601,9 @@ static int ipq40xx_eth_init(struct eth_device *eth_dev, bd_t *this)
 		case FAL_SPEED_10:
 		case FAL_SPEED_100:
 		case FAL_SPEED_1000:
-			printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
-				priv->mac_unit, i, lstatus[status], speed,
-				dp[duplex]);
+//		printf ("eth%d PHY%d %s Speed :%d %s duplex\n",
+//				priv->mac_unit, i, lstatus[status], speed,
+//				dp[duplex]);
 			break;
 		default:
 			printf("Unknown speed\n");
@@ -892,7 +892,7 @@ int ipq40xx_edma_init(ipq40xx_edma_board_cfg_t *edma_cfg)
 			memcpy(&dev[i]->enetaddr[0],
 				&enet_addr[edma_cfg->unit * 6], 6);
 		}
-		printf("MAC%x addr:%x:%x:%x:%x:%x:%x\n",
+		printf("MAC%x addr:%02x:%02x:%02x:%02x:%02x:%02x\n",
 			edma_cfg->unit, dev[i]->enetaddr[0],
 			dev[i]->enetaddr[1],
 			dev[i]->enetaddr[2],

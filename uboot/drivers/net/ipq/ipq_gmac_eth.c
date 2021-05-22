@@ -649,7 +649,7 @@ int ipq_gmac_init(ipq_gmac_board_cfg_t *gmac_cfg)
 			       6);
 		}
 
-		ipq_info("MAC%x addr:%x:%x:%x:%x:%x:%x\n",
+		ipq_info("MAC%x addr:%02x:%02x:%02x:%02x:%02x:%02x\n",
 			gmac_cfg->unit, dev[i]->enetaddr[0],
 			dev[i]->enetaddr[1],
 			dev[i]->enetaddr[2],

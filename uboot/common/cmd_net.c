@@ -27,23 +27,14 @@
 #include <common.h>
 #include <command.h>
 #include <net.h>
+#include <gl_config.h>
+#include "gl/gl_ipq40xx_api.h"
 
-#if defined(CONFIG_CMD_HTTPD)
-extern int NetLoopHttpd(void);
-int do_httpd(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	return NetLoopHttpd();
-}
-
-U_BOOT_CMD(httpd, 1, 1, do_httpd,
-	   "start web server for firmware recovery",
-	   "start web server for firmware recovery"
-);
-#endif /* CONFIG_CMD_HTTPD */
-
+extern int TftpdownloadStatus;
+extern int gl_CurrentStatus;
 
 static int netboot_common(enum proto_t, cmd_tbl_t *, int, char * const []);
-
+/*
 int do_bootp (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return netboot_common (BOOTP, cmdtp, argc, argv);
@@ -54,10 +45,15 @@ U_BOOT_CMD(
 	"boot image via network using BOOTP/TFTP protocol",
 	"[loadAddress] [[hostIPaddr:]bootfilename]"
 );
+*/
 
 int do_tftpb (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int ret;
+
+#ifdef CONFIG_RSA
+	gl_CurrentStatus = CONFIG_STATUS_DOWNLOAD_FW;
+#endif
 
 	bootstage_mark_name(BOOTSTAGE_KERNELREAD_START, "tftp_start");
 	ret = netboot_common(TFTPGET, cmdtp, argc, argv);
@@ -66,7 +62,7 @@ int do_tftpb (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 U_BOOT_CMD(
-	tftpboot,	3,	1,	do_tftpb,
+	tftpboot,	3,	0,	do_tftpb,
 	"boot image via network using TFTP protocol",
 	"[loadAddress] [[hostIPaddr:]bootfilename]"
 );
@@ -81,7 +77,7 @@ int do_tftpput(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 U_BOOT_CMD(
-	tftpput,	4,	1,	do_tftpput,
+	tftpput,	4,	0,	do_tftpput,
 	"TFTP put command, for uploading files to a server",
 	"Address Size [[hostIPaddr:]filename]"
 );
@@ -206,7 +202,6 @@ static void netboot_update_env (void)
 #endif
 }
 
-int TftpdownloadStatus = 0;
 static int netboot_common(enum proto_t proto, cmd_tbl_t *cmdtp, int argc,
 		char * const argv[])
 {
@@ -263,16 +258,16 @@ static int netboot_common(enum proto_t proto, cmd_tbl_t *cmdtp, int argc,
 		bootstage_error(BOOTSTAGE_ID_NET_NETLOOP_OK);
 		return 1;
 	}
-	TftpdownloadStatus = 1;	//tftp download ok
-	
+	printf("NetBootFileXferSize = %08x\n", size);
+	TftpdownloadStatus = GL_OK;	//tftp download ok
 	bootstage_mark(BOOTSTAGE_ID_NET_NETLOOP_OK);
-
+	
 	/* NetLoop ok, update environment */
 	netboot_update_env();
 
 	/* done if no file was loaded (no errors though) */
 	if (size == 0) {
-		TftpdownloadStatus = 0;
+		TftpdownloadStatus = GL_FAILED;
 		bootstage_error(BOOTSTAGE_ID_NET_LOADED);
 		return 0;
 	}
@@ -302,11 +297,11 @@ int do_ping (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return CMD_RET_USAGE;
 
 	if (NetLoop(PING) < 0) {
-		printf("ping failed; host %s is not alive\n", argv[1]);
+		printf("ping failed; host %s is not alive\n\n", argv[1]);
 		return 1;
 	}
 
-	printf("host %s is alive\n", argv[1]);
+	printf("host %s is alive\n\n", argv[1]);
 
 	return 0;
 }

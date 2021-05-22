@@ -77,6 +77,9 @@
 #define ESS_MIB_OFFSET	0x30
 #define ESS_MIB_REG	0x34
 #define ESS_MIB_EN	(1 << 0)
+#ifdef CONFIG_WINDOWS_UPGRADE_SUPPORT
+#define CONFIG_ESS_MIB_EN
+#endif
 #ifdef CONFIG_ESS_MIB_EN
 /*
  * Tx Mib counter offset

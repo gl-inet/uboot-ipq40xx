@@ -438,7 +438,7 @@ static int do_mii(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 /***************************************************/
-
+#ifdef CONFIG_CMD_MII
 U_BOOT_CMD(
 	mii,	5,	1,	do_mii,
 	"MII utility commands",
@@ -450,3 +450,4 @@ U_BOOT_CMD(
 	"mii dump   <addr> <reg>        - pretty-print <addr> <reg> (0-5 only)\n"
 	"Addr and/or reg may be ranges, e.g. 2-7."
 );
+#endif
