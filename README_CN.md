@@ -6,7 +6,7 @@ git clone https://github.com/gl-inet/uboot-ipq40xx.git
 ```
 然后通过clone sdk来获得toolchain：
 ```
-git clone https://github.com/gl-inet/openwrt-sdk-ipq806x.git
+git clone https://github.com/gl-inet-builder/openwrt-sdk-ipq806x-qsdk53
 ```
 修改顶层Makefile的STAGING_DIR，指向openwrt-sdk-ipq806x/staging_dir，然后执行：
 ```

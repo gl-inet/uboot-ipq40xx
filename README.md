@@ -6,7 +6,7 @@ git clone https://github.com/gl-inet/uboot-ipq40xx.git
 ```
 clone sdk, ie. toolchain to compile uboot:
 ```
-git clone https://github.com/gl-inet/openwrt-sdk-ipq806x.git
+git clone https://github.com/gl-inet-builder/openwrt-sdk-ipq806x-qsdk53
 ```
 edit toplevel Makefile:
 change STAGING_DIR varable to point to openwrt-sdk-ipq806x/staging_dir you just clone.
