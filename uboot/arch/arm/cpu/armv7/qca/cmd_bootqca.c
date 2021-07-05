@@ -469,6 +469,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		if (debug) {
 			printf("Using MMC device\n");
 		}
+		//printf("sfi->hlos offest: 0x%x\n\n", (uint)sfi->hlos.offset);
 		blk_dev = mmc_get_dev(host->dev_num);
 		if (smem_bootconfig_info() == 0) {
 			active_part = get_rootfs_active_partition();
@@ -481,25 +482,25 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			ret = find_part_efi(blk_dev, "0:HLOS", &disk_info);
 		}
 
-		if (ret > 0) {
-			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%x 0x%x",
-					CONFIG_SYS_LOAD_ADDR,
-					(uint)disk_info.start, (uint)disk_info.size);
-		}else if(blk_dev->part_type == PART_TYPE_DOS){
-			//boot dos/mbr image, read 16MB kernel image
-			snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%x 0x%x",
-					CONFIG_SYS_LOAD_ADDR,
-					dos_boot_part_lba_start, dos_boot_part_size);
-		}
-		else {
-			printf("No GPT kernel partition, booting from NOR...\n");
-			gboard_param->nor_emmc_available = 0;
-			snprintf(runcmd, sizeof(runcmd),
-				"sf probe &&"
-				"sf read 0x%x 0x%x 0x%x && ",
-				CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size);
-			if((uint)sfi->hlos.offset==0xbad0ff5e)
-				return -1;
+		if((uint)sfi->hlos.offset==0xbad0ff5e){
+			if (ret > 0) {
+				snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%x 0x%x",
+						CONFIG_SYS_LOAD_ADDR,
+						(uint)disk_info.start, (uint)disk_info.size);
+			}
+			if(blk_dev->part_type == PART_TYPE_DOS){
+				//boot dos/mbr image, read 16MB kernel image
+				snprintf(runcmd, sizeof(runcmd), "mmc read 0x%x 0x%x 0x%x",
+						CONFIG_SYS_LOAD_ADDR,
+						dos_boot_part_lba_start, dos_boot_part_size);
+			}
+		}else {
+				printf("No GPT kernel partition, booting from NOR...\n");
+				gboard_param->nor_emmc_available = 0;
+				snprintf(runcmd, sizeof(runcmd),
+					"sf probe &&"
+					"sf read 0x%x 0x%x 0x%x && ",
+					CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size);
 		}
 
 #endif   	/* CONFIG_QCA_MMC   */
