@@ -733,6 +733,17 @@ int ipq40xx_qca8075_phy_init(struct ipq40xx_eth_dev *info)
 	printf ("PHY ID2: 0x%x\n", phy_data);
 	qca8075_id = (qca8075_id << 16) | phy_data;
 
+	if (qca8075_id == QCA8075_PHY_V1_1_2P)
+		phy_id = 3;
+
+	if ((qca8075_id == QCA8075_PHY_V1_0_5P) ||
+	    (qca8075_id == QCA8075_PHY_V1_1_5P) ||
+	    (qca8075_id == QCA8075_PHY_V1_1_2P)) {
+		for (; phy_id < 5; phy_id++) {
+			qca8075_phy_reg_write(0x0, phy_id, 0x1e, 0x82a0);
+		}
+	}
+
 	if (qca8075_id == QCA8075_PHY_V1_0_5P) {
 		phy_data = qca8075_phy_mmd_read(0, PSGMII_ID,
 			QCA8075_PHY_MMD1_NUM, QCA8075_PSGMII_FIFI_CTRL);
@@ -751,8 +762,6 @@ int ipq40xx_qca8075_phy_init(struct ipq40xx_eth_dev *info)
 	/*
 	 * Enable phy power saving function by default
 	 */
-	if (qca8075_id == QCA8075_PHY_V1_1_2P)
-		phy_id = 3;
 
 	if ((qca8075_id == QCA8075_PHY_V1_0_5P) ||
 	    (qca8075_id == QCA8075_PHY_V1_1_5P) ||
