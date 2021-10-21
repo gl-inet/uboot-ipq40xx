@@ -462,7 +462,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 			snprintf(runcmd, sizeof(runcmd),
 				"sf probe &&"
 				"sf read 0x%x 0x%x 0x%x && ",
-				CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size);
+				CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)(sfi->hlos.size+0x400000));
 		}
 #ifdef CONFIG_QCA_MMC
 	} else if ((sfi->flash_type == SMEM_BOOT_MMC_FLASH) || (gboard_param->nor_emmc_available == 1)) {
@@ -500,7 +500,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 				snprintf(runcmd, sizeof(runcmd),
 					"sf probe &&"
 					"sf read 0x%x 0x%x 0x%x && ",
-					CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)sfi->hlos.size);
+					CONFIG_SYS_LOAD_ADDR, (uint)sfi->hlos.offset, (uint)(sfi->hlos.size+0x400000));
 		}
 
 #endif   	/* CONFIG_QCA_MMC   */
