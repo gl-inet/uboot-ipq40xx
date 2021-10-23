@@ -28,16 +28,21 @@ bin/openwrt-ipq40xx-u-boot-stripped.elf
 ## tftp命令行升级
 
 在tftpd服务器（ip为192.168.1.2）中放入用于升级的固件或uboot。
-升级固件（出厂固件或openwrt固件），固件名字默认为firmware.bin
+升级固件（出厂固件或openwrt固件），固件名字根据板子不同而不同，可以输入下列命令后按提示更改文件名。
 ```
 run lf
 ```
 
-升级uboot，uboot名字默认为openwrt-ipq40xx-u-boot-stripped.elf
+升级uboot，uboot名字据板子不同而不同，可以输入下列命令后按提示更改文件名。
 ```
 run lu
 ```
 
 ## 自动升级
-在tftpd服务器（ip为192.168.1.2）中放入用于升级的固件，固件名字默认为firmware.bin
+此功能默认关闭，使用如下命令启用：
+```
+setenv tftp_upgrade 1
+saveenv
+```
+在tftpd服务器（ip为192.168.1.2）中放入用于升级的固件，固件名字根据板子不同而不同，可以输入‘run lf’命令后按提示更改文件名。
 
