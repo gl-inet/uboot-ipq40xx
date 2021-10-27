@@ -48,7 +48,8 @@ run lu
 
 ## automatic tftp upgrade:
 This function is disabled by default, turn it on by
-```setenv tftp_upgrade 1
+```
+setenv tftp_upgrade 1
 saveenv
 
 ```
