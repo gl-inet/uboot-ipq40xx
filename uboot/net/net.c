@@ -521,7 +521,6 @@ restart:
 			x = timeHandler;
 			timeHandler = (thand_f *)0;
 			(*x)();
-			return -1;
 		}
 
 
