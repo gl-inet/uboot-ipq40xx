@@ -483,7 +483,7 @@ retry:
 		}
 	}
 
-	if (0)
+	if (scrub)
 		err = ubi_wl_scrub_peb(ubi, pnum);
 
 	leb_read_unlock(ubi, vol_id, lnum);
