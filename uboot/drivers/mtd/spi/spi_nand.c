@@ -657,7 +657,7 @@ static int spi_nand_read_std(struct mtd_info *mtd, loff_t from, struct mtd_oob_o
 	}
 
 	if ((ret == 0) && (ecc_corrected))
-		ret = -EUCLEAN;
+		ret = 0;
 out:
 	spi_release_bus(flash->spi);
 	return ret;
