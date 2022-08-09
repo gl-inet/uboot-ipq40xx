@@ -202,7 +202,7 @@ int do_http_upgrade( const ulong size, const int upgrade_type )
 		
 	} else if ( upgrade_type == WEBFAILSAFE_UPGRADE_TYPE_ART ) {
 
-		printf( "\n\n****************************\n*      ART  UPGRADING      *\n* DO NOT POWER OFF DEVICE! *\n****************************\n\n" );
+		printf( "\n\n****************************\n*      ART UPGRADING       *\n* DO NOT POWER OFF DEVICE! *\n****************************\n\n" );
 		sprintf(cmd, "sf probe && sf erase 0x170000 0x10000 && sf write 0x88000000 0x170000 0x10000");
 		run_command(cmd, 0);
 		return 0;
@@ -269,11 +269,11 @@ int do_http_progress( const int state )
 				/* LEDOFF(); */
 				udelay( 25000 );
 			}
-			printf( "HTTP ugrade is done! Rebooting...\n\n" );
+			printf( "HTTP upgrade is done! Rebooting...\n\n" );
 			break;
 
 		case WEBFAILSAFE_PROGRESS_UPGRADE_FAILED:
-			printf( "## Error: HTTP ugrade failed!\n\n" );
+			printf( "## Error: HTTP upgrade failed!\n\n" );
 
 			// blink LED fast for 4 sec
 			for ( i = 0; i < 80; ++i ) {

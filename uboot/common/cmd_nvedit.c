@@ -1039,7 +1039,7 @@ U_BOOT_CMD(
 #if (defined(CONFIG_CMD_RUN))
 U_BOOT_CMD_COMPLETE(
 	run_var,	CONFIG_SYS_MAXARGS,	1,	do_run_origin,
-	"run commands in an environment variable 1",
+	"run commands in an environment variable",
 	"var [...]\n"
 	"    - run the commands in the environment variable(s) 'var'",
 	var_complete

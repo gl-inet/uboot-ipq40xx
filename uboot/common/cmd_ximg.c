@@ -85,12 +85,12 @@ do_imgextract(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 
 		hdr = (image_header_t *)addr;
 		if (!image_check_magic(hdr)) {
-			printf("Bad Magic Number\n");
+			printf("Bad magic number\n");
 			return 1;
 		}
 
 		if (!image_check_hcrc(hdr)) {
-			printf("Bad Header Checksum\n");
+			printf("Bad header checksum\n");
 			return 1;
 		}
 #ifdef DEBUG
@@ -98,7 +98,7 @@ do_imgextract(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 #endif
 
 		if (!image_check_type(hdr, IH_TYPE_MULTI)) {
-			printf("Wrong Image Type for %s command\n",
+			printf("Wrong image type for %s command\n",
 					cmdtp->name);
 			return 1;
 		}
@@ -112,9 +112,9 @@ do_imgextract(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 		}
 
 		if (verify) {
-			printf("   Verifying Checksum ... ");
+			printf("   Verifying checksum ... ");
 			if (!image_check_dcrc(hdr)) {
-				printf("Bad Data CRC\n");
+				printf("Bad data CRC\n");
 				return 1;
 			}
 			printf("OK\n");
@@ -122,7 +122,7 @@ do_imgextract(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 
 		count = image_multi_count(hdr);
 		if (part >= count) {
-			printf("Bad Image Part\n");
+			printf("Bad image part\n");
 			return 1;
 		}
 
@@ -162,7 +162,7 @@ do_imgextract(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 		/* verify integrity */
 		if (verify) {
 			if (!fit_image_check_hashes(fit_hdr, noffset)) {
-				puts("Bad Data Hash\n");
+				puts("Bad data hash\n");
 				return 1;
 			}
 		}
@@ -220,7 +220,7 @@ do_imgextract(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 			printf("   Uncompressing part %d ... ", part);
 			if (gunzip((void *) dest, unc_len,
 				   (uchar *) data, &len) != 0) {
-				puts("GUNZIP ERROR - image not loaded\n");
+				puts("Gunzip error - image not loaded\n");
 				return 1;
 			}
 			break;
@@ -242,7 +242,7 @@ do_imgextract(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 					CONFIG_SYS_MALLOC_LEN < (4096 * 1024),
 					0);
 				if (i != BZ_OK) {
-					printf("BUNZIP2 ERROR %d - "
+					printf("Bunzip error %d - "
 						"image not loaded\n", i);
 					return 1;
 				}

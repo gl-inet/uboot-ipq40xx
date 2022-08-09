@@ -66,14 +66,14 @@ unsigned long hex2int(char *a, unsigned int len)
     return val;
 }
 
-/*convert a string,which length is 18, to a macaddress data type.*/    
+/* convert a string of length 18 to a macaddress data type. */
 #define MAC_LEN_IN_BYTE 6     
-#define COPY_STR2MAC(mac,str)  \ 	
-	int i, d = 2; \	   
-	do { \            
-		for(i = 0; i < MAC_LEN_IN_BYTE; i++) {\               
-			mac[i] = (a2x(str[i*d]) << 4) + a2x(str[i*d + 1]);\           
-		}\      
+#define COPY_STR2MAC(mac, str)  \
+	do { \
+		int i; \
+		for (i = 0; i < MAC_LEN_IN_BYTE; i++) { \
+			mac[i] = (a2x(str[i*2]) << 4) + a2x(str[i*2 + 1]); \
+		} \
 	} while(0)  
 
 void do_run_usage()
@@ -371,7 +371,7 @@ int upgrade(){
 			case MACH_TYPE_IPQ40XX_AP_DK04_1_C3:
 			case MACH_TYPE_IPQ40XX_AP_DK01_1_C1:
 				if(openwrt_firmware_size < hex2int(getenv("filesize"), strlen(getenv("filesize")))){
-					printf("Firmware oversize! Not flashing.\n");
+					printf("Firmware too large! Not flashing.\n");
 					return 0;
 				}
 				sprintf(cmd, "sf probe && sf erase 0x%x 0x%x && sf write 0x88000000 0x%x $filesize",
@@ -419,7 +419,7 @@ int do_run (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 		sprintf(cmd, "tftpboot 0x88000000 %s", uboot_name);
 		if ( (ret = run_command(cmd, 0)) == GL_OK) {
 			if (TftpdownloadStatus != GL_OK) {
-				printf("%s failed. Please re-download\n", cmd);
+				printf("%s failed. Please re-download.\n", cmd);
 				return CMD_RET_FAILURE;
 			} else {
 				TftpdownloadStatus = -1;
@@ -438,7 +438,7 @@ int do_run (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 		sprintf(cmd, "tftpboot 0x88000000 %s", openwrt_fw_name);
 		if ( (ret = run_command(cmd, 0)) == GL_OK) {
 			if (TftpdownloadStatus != GL_OK) {
-				printf("%s failed. Please re-download\n", cmd);
+				printf("%s failed. Please re-download.\n", cmd);
 				return CMD_RET_FAILURE;
 			} else {
 				TftpdownloadStatus = -1;
@@ -455,7 +455,7 @@ int do_run (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 		sprintf(cmd, "tftpboot 0x88000000 %s", qsdk_fw_name);
 		if ( (ret = run_command(cmd, 0)) == GL_OK) {
 			if (TftpdownloadStatus != GL_OK) {
-				printf("%s failed. Please re-download\n", cmd);
+				printf("%s failed. Please re-download.\n", cmd);
 				return CMD_RET_FAILURE;
 			} else {
 				TftpdownloadStatus = -1;
@@ -499,7 +499,7 @@ int do_run (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 	if (ret == GL_OK) {
 		printf("TFTP download and flash OK.\n");
 	} else {
-		printf("TFTP download Failed. Please re-download\n");
+		printf("TFTP download failed. Please re-download.\n");
 	}
 	gpio_set_value(g_gpio_power_led, !g_is_power_led_active_low);
 	LED_INIT();
@@ -548,7 +548,7 @@ int do_flash (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 			}	
 		} else if (!strncmp(argv[1], "w", 1)) {
 			if (strlen(argv[3]) != 12) {
-				puts ("Error length ??? The length of the mac is 12.\n");
+				puts("Invalid mac address length\n");
 				return 1;
 			}
 			
@@ -590,7 +590,7 @@ int do_flash (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 				*wifi_5g_checksum = checksum_5g;
 				*wifi_5g_9886_checksum = checksum_5g_9886;
 			}
-			puts ("Copy to Flash... ");
+			puts ("Copy to flash... ");
 			sprintf(cmd, "sf erase 0x%x 0x%x && sf write 0x88000100 0x%x 0x%x", 
 				CONFIG_ART_START, CONFIG_ART_SIZE, CONFIG_ART_START, CONFIG_ART_SIZE);
 			run_command(cmd, 0);
@@ -669,10 +669,10 @@ int find_calibration_data()
 	printf("Checking calibration status...\n");
 
 	if (*cal_2g_data == 0x2f20 && *cal_5g_data == 0x2f20 && (gboard_param->machid == MACH_TYPE_IPQ40XX_AP_DK04_1_C3 ? *cal_5g_9886_data == 0x2f20:1)) {
-		printf("Device have calibrated,checking test status...\n");
+		printf("Device is calibrated, checking test status...\n");
 		ret = 0;
 	} else {
-		printf("Device haven't calibrated,booting the calibration firmware...\n");
+		printf("Device isn't calibrated, booting the calibration firmware...\n");
 		ret = -1;
 	}
 	
@@ -736,10 +736,10 @@ int check_test()
 			*s0s==0x73 && *s1e==0x65 && *s2c==0x63 && *s3o==0x6f && \
 			*s4n==0x6e && *s5d==0x64 && *s6t==0x74 && *s7e==0x65 && \
 			*s8s==0x73 && *s9t==0x74) {
-		printf("Device haven tested, checking MAC info...\n");
+		printf("Device is tested, checking MAC info...\n");
 		ret = 0;
 	} else {
-		printf("Device haven't tested, please test device in calibration firmware...\n");
+		printf("Device isn't tested: please test device in calibration firmware...\n");
 		ret = -1;
 	}
 
@@ -766,7 +766,7 @@ int check_config()
 	}
 	//printf("eth0: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
 	if (!memcmp(addr, addr_tmp, 6)) {
-		printf("Device don't have eth0 MAC info, please write MAC in calibration firmware...\n");
+		printf("Device doesn't have eth0 MAC info: please write MAC in calibration firmware...\n");
 		return -1;
 	}
 
@@ -777,7 +777,7 @@ int check_config()
 	}
 	//printf("eth1: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
 	if (!memcmp(addr, addr_tmp, 6)) {
-		printf("Device don't have eth1 MAC info, please write MAC in calibration firmware...\n");
+		printf("Device doesn't have eth1 MAC info: please write MAC in calibration firmware...\n");
 		return -1;
 	}
 
@@ -788,7 +788,7 @@ int check_config()
 	}
 	//printf("2G: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
 	if (!memcmp(addr, addr_tmp, 6)) {
-		printf("Device don't have 2G MAC info, please write MAC in calibration firmware...\n");
+		printf("Device doesn't have 2GHz MAC info: please write MAC in calibration firmware...\n");
 		return -1;
 	}
 
@@ -799,7 +799,7 @@ int check_config()
 	}
 	//printf("5G: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
 	if (!memcmp(addr, addr_tmp, 6)) {
-		printf("Device don't have 5G MAC info, please write MAC in calibration firmware...\n");
+		printf("Device doesn't have 5GHz MAC info: please write MAC in calibration firmware...\n");
 		return -1;
 	}
 
@@ -811,11 +811,11 @@ int check_config()
 	}
 	//printf("5G: %x:%x:%x:%x:%x:%x\n", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
 	if (!memcmp(addr, addr_tmp, 6)) {
-		printf("Device don't have 5G MAC info, please write MAC in calibration firmware...\n");
+		printf("Device doesn't have 5GHz MAC info: please write MAC in calibration firmware...\n");
 		return -1;
 	}
 	}
-	printf("Device have MAC info, starting firmware...\n\n");
+	printf("Device has MAC info, starting firmware...\n\n");
 	
 	return 0;
 }
@@ -836,7 +836,7 @@ int auto_update_by_tftp()
 
 	if (run_command(cmd, 0) == GL_OK) {
 		if (TftpdownloadStatus != GL_OK) {
-			printf("TFTP download firmware.bin failed. Please re-download\n");
+			printf("TFTP download of firmware.bin failed. Please re-download.\n");
 			return CMD_RET_FAILURE;
 		} else {
 			ret = upgrade();
@@ -846,7 +846,7 @@ int auto_update_by_tftp()
 
 	if (run_command(cmd1, 0) == GL_OK) {
 		if (TftpdownloadStatus != GL_OK) {
-			printf("TFTP download firmware.bin failed. Please re-download\n");
+			printf("TFTP download of firmware.bin failed. Please re-download.\n");
 			return CMD_RET_FAILURE;
 		} else {
 			ret = upgrade();

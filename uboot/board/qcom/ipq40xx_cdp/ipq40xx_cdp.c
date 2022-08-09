@@ -984,7 +984,7 @@ static int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 			debug("%s: unable to patch alias\n", __func__);
 		nodeoff_c = fdt_path_offset(blob, "/soc/edma");
 		if (nodeoff_c < 0) {
-			printf("ipq: unable to find compatiable edma node\n");
+			printf("ipq: unable to find compatible edma node\n");
 			return -1;
 		}
 
@@ -997,7 +997,7 @@ static int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 	case 3:
 		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac1");
 		if (nodeoff_c < 0) {
-			printf("ipq: unable to find compatiable edma node\n");
+			printf("ipq: unable to find compatible edma node\n");
 			return -1;
 		}
 		vlan.r0 = htonl(0x1);
@@ -1009,7 +1009,7 @@ static int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 
 		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac2");
 		if (nodeoff_c < 0) {
-			printf("ipq: unable to find compatiable edma node\n");
+			printf("ipq: unable to find compatible edma node\n");
 			return -1;
 		}
 		vlan.r0 = htonl(0x3);
@@ -1022,7 +1022,7 @@ static int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 	case 4:
 		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac1");
 		if (nodeoff_c < 0) {
-			printf("ipq: unable to find compatiable edma node\n");
+			printf("ipq: unable to find compatible edma node\n");
 			return -1;
 		}
 		vlan.r0 = htonl(0x1);
@@ -1034,7 +1034,7 @@ static int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 
 		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac2");
 		if (nodeoff_c < 0) {
-			printf("ipq: unable to find compatiable edma node\n");
+			printf("ipq: unable to find compatible edma node\n");
 			return -1;
 		}
 		vlan.r0 = htonl(0x3);
@@ -1046,7 +1046,7 @@ static int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 
 		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac3");
 		if (nodeoff_c < 0) {
-			printf("ipq: unable to find compatiable edma node\n");
+			printf("ipq: unable to find compatible edma node\n");
 			return -1;
 		}
 		vlan.r0 = htonl(0x4);
@@ -1059,7 +1059,7 @@ static int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 	case 5:
 		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac1");
 		if (nodeoff_c < 0) {
-			printf("ipq: unable to find compatiable edma node\n");
+			printf("ipq: unable to find compatible edma node\n");
 			return -1;
 		}
 		vlan.r0 = htonl(0x1);
@@ -1079,7 +1079,7 @@ static int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 
 		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac2");
 		if (nodeoff_c < 0) {
-			printf("ipq: unable to find compatiable edma node\n");
+			printf("ipq: unable to find compatible edma node\n");
 			return -1;
 		}
 		vlan.r0 = htonl(0x3);
@@ -1099,7 +1099,7 @@ static int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 
 		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac3");
 		if (nodeoff_c < 0) {
-			printf("ipq: unable to find compatiable edma node\n");
+			printf("ipq: unable to find compatible edma node\n");
 			return -1;
 		}
 		vlan.r0 = htonl(0x4);
@@ -1119,7 +1119,7 @@ static int ipq40xx_patch_eth_params(void *blob, unsigned long gmac_no)
 
 		nodeoff_c = fdt_path_offset(blob, "/soc/edma/gmac4");
 		if (nodeoff_c < 0) {
-			printf("ipq: unable to find compatiable edma node\n");
+			printf("ipq: unable to find compatible edma node\n");
 			return -1;
 		}
 		vlan.r0 = htonl(0x5);

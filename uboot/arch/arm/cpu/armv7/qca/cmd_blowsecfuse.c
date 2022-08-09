@@ -38,8 +38,8 @@ int do_fuseipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	} fuseip;
 
 	if (argc != 2) {
-		printf("No Arguments provided\n");
-		printf("Command format: fuseipq <address>\n");
+		printf("No arguments provided\n");
+		printf("Usage: fuseipq <address>\n");
 		return 1;
 	}
 
@@ -59,13 +59,13 @@ int do_fuseipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	else if (fuse_status == FUSEPROV_INVALID_HASH)
 		printf("Invalid sec.dat\n");
 	else if (fuse_status  != FUSEPROV_SUCCESS)
-		printf("Failed to Blow fuses");
+		printf("Failed to blow fuses");
 	else
-		printf("Blow Success\n");
+		printf("Blow succeeded\n");
 
 	return 0;
 }
 
 U_BOOT_CMD(fuseipq, 2, 0, do_fuseipq,
 		"fuse QFPROM registers from memory\n",
-		"fuseipq [address]  - Load fuse(s) and blows in the qfprom");
+		"fuseipq [address]  - Load fuse(s) and blow in the QFPROM");
