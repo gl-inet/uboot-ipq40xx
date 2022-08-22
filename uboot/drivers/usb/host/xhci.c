@@ -418,8 +418,7 @@ static int xhci_address_device(struct usb_device *udev)
 		ret = -EPROTO;
 		break;
 	case COMP_DEV_ERR:
-		puts("ERROR: Incompatible device"
-					"for address device command.\n");
+		puts("ERROR: incompatible device for address device command.\n");
 		ret = -ENODEV;
 		break;
 	case COMP_SUCCESS:

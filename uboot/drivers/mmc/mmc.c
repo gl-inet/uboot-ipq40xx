@@ -347,7 +347,7 @@ mmc_berase(int dev_num, unsigned long start, lbaint_t blkcnt)
 		if (mmc->sec_feature_support & EXT_CSD_SEC_GB_CL_EN) {
 			arg = MMC_SECURE_TRIM1_ARG;
 		} else {
-			printf("\n\nCaution! Your devices Erase group is 0x%x\n"
+			printf("\n\nCaution! Your device's erase group is 0x%x\n"
 				"The erase range would be change to 0x%lx~0x%lx\n\n",
 				mmc->erase_grp_size, start & ~(mmc->erase_grp_size - 1),
 				((start + blkcnt + mmc->erase_grp_size)

@@ -167,7 +167,7 @@ int config_select(unsigned int addr, const char **config, char *rcmd, int rcmd_s
 			return 0;
 		}
 	}
-	printf("Config not availabale\n");
+	printf("Configuration not available\n");
 	return -1;
 }
 
@@ -204,7 +204,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		ret = scm_call(SCM_SVC_BOOT, SCM_SVC_WR,
 			(void *)&val, sizeof(val), NULL, 0);
 		if (ret)
-			printf ("Error in reseting the Magic cookie\n");
+			printf("Failed to reset the magic cookie\n");
 
 		etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
 
@@ -239,10 +239,10 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		}
 	} else if (sfi->flash_type == SMEM_BOOT_MMC_FLASH) {
 		if (debug) {
-			printf("Using MMC device\n");
+			printf("Using mmc device\n");
 		}
 	} else {
-		printf("Unsupported BOOT flash type\n");
+		printf("Unsupported boot flash type\n");
 		return -1;
 	}
 	if (debug) {
@@ -330,7 +330,7 @@ static int do_boot_signedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const a
 		sizeof(kernel_img_info_t), NULL, 0);
 
 	if (ret) {
-		printf("Kernel image authentication failed \n");
+		printf("Kernel image authentication failed\n");
 		BUG();
 	}
 
@@ -387,7 +387,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 		ret = scm_call(SCM_SVC_BOOT, SCM_SVC_WR,
 			(void *)&val, sizeof(val), NULL, 0);
 		if (ret)
-			printf ("Error in reseting the Magic cookie\n");
+			printf ("Failed to reset the magic cookie\n");
 
 		etime = get_timer_masked() + (10 * CONFIG_SYS_HZ);
 
@@ -505,7 +505,7 @@ static int do_boot_unsignedimg(cmd_tbl_t *cmdtp, int flag, int argc, char *const
 
 #endif   	/* CONFIG_QCA_MMC   */
 	} else {
-		printf("Unsupported BOOT flash type\n");
+		printf("Unsupported boot flash type\n");
 		return -1;
 	}
 
@@ -577,4 +577,4 @@ static int do_bootipq(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 U_BOOT_CMD(bootipq, 2, 0, do_bootipq,
 	   "bootipq from flash device",
-	   "bootipq [debug] - Load image(s) and boots the kernel\n");
+	   "bootipq [debug] - Load image(s) and boot the kernel\n");

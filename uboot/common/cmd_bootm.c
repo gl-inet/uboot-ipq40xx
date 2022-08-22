@@ -206,7 +206,7 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 	os_hdr = boot_get_kernel(cmdtp, flag, argc, argv,
 			&images, &images.os.image_start, &images.os.image_len);
 	if (images.os.image_len == 0) {
-		puts("ERROR: can't get kernel image!\n");
+		puts("Can't get kernel image!\n");
 		return 1;
 	}
 
@@ -254,7 +254,7 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 		break;
 #endif
 	default:
-		puts("ERROR: unknown image format type!\n");
+		puts("Unknown image format type!\n");
 		return 1;
 	}
 
@@ -348,8 +348,8 @@ static int bootm_load_os(image_info_t os, ulong *load_end, int boot_progress)
 		printf("   Uncompressing %s ... ", type_name);
 		if (gunzip((void *)load, unc_len,
 				(uchar *)image_start, &image_len) != 0) {
-			puts("GUNZIP: uncompress, out-of-mem or overwrite "
-				"error - must RESET board to recover\n");
+			puts("Gunzip: uncompress, out-of-mem or overwrite "
+				"error - must reset board to recover\n");
 			if (boot_progress)
 				bootstage_error(BOOTSTAGE_ID_DECOMP_IMAGE);
 			return BOOTM_ERR_RESET;
@@ -370,8 +370,8 @@ static int bootm_load_os(image_info_t os, ulong *load_end, int boot_progress)
 					&unc_len, (char *)image_start, image_len,
 					CONFIG_SYS_MALLOC_LEN < (4096 * 1024), 0);
 		if (i != BZ_OK) {
-			printf("BUNZIP2: uncompress or overwrite error %d "
-				"- must RESET board to recover\n", i);
+			printf("Bunzip2: uncompress or overwrite error %d "
+				"- must reset board to recover\n", i);
 			if (boot_progress)
 				bootstage_error(BOOTSTAGE_ID_DECOMP_IMAGE);
 			return BOOTM_ERR_RESET;
@@ -390,8 +390,8 @@ static int bootm_load_os(image_info_t os, ulong *load_end, int boot_progress)
 			(unsigned char *)image_start, image_len);
 		unc_len = lzma_len;
 		if (ret != SZ_OK) {
-			printf("LZMA: uncompress or overwrite error %d "
-				"- must RESET board to recover\n", ret);
+			printf("Lzma: uncompress or overwrite error %d "
+				"- must reset board to recover\n", ret);
 			bootstage_error(BOOTSTAGE_ID_DECOMP_IMAGE);
 			return BOOTM_ERR_RESET;
 		}
@@ -407,8 +407,8 @@ static int bootm_load_os(image_info_t os, ulong *load_end, int boot_progress)
 					  image_len, (unsigned char *)load,
 					  &unc_len);
 		if (ret != LZO_E_OK) {
-			printf("LZO: uncompress or overwrite error %d "
-			      "- must RESET board to recover\n", ret);
+			printf("Lzo: uncompress or overwrite error %d "
+			      "- must reset board to recover\n", ret);
 			if (boot_progress)
 				bootstage_error(BOOTSTAGE_ID_DECOMP_IMAGE);
 			return BOOTM_ERR_RESET;
@@ -752,9 +752,9 @@ static image_header_t *image_get_kernel(ulong img_addr, int verify)
 	image_print_contents(hdr);
 
 	if (verify) {
-		puts("   Verifying Checksum ... ");
+		puts("   Verifying checksum ... ");
 		if (!image_check_dcrc(hdr)) {
-			printf("Bad Data CRC\n");
+			printf("Bad data CRC\n");
 			bootstage_error(BOOTSTAGE_ID_CHECK_CHECKSUM);
 			return NULL;
 		}
@@ -764,7 +764,7 @@ static image_header_t *image_get_kernel(ulong img_addr, int verify)
 
 #ifndef CONFIG_IPQ_FIRMWARE
 	if (!image_check_target_arch(hdr)) {
-		printf("Unsupported Architecture 0x%x\n", image_get_arch(hdr));
+		printf("Unsupported architecture 0x%x\n", image_get_arch(hdr));
 		bootstage_error(BOOTSTAGE_ID_CHECK_ARCH);
 		return NULL;
 	}
@@ -791,9 +791,9 @@ static int fit_check_kernel(const void *fit, int os_noffset, int verify)
 	fit_image_print(fit, os_noffset, "   ");
 
 	if (verify) {
-		puts("   Verifying Hash Integrity ... ");
+		puts("   Verifying hash integrity ... ");
 		if (!fit_image_check_hashes(fit, os_noffset)) {
-			puts("Bad Data Hash\n");
+			puts("Bad data hash\n");
 			bootstage_error(BOOTSTAGE_ID_FIT_CHECK_HASH);
 			return 0;
 		}
@@ -802,7 +802,7 @@ static int fit_check_kernel(const void *fit, int os_noffset, int verify)
 	bootstage_mark(BOOTSTAGE_ID_FIT_CHECK_ARCH);
 
 	if (!fit_image_check_target_arch(fit, os_noffset)) {
-		puts("Unsupported Architecture\n");
+		puts("Unsupported architecture\n");
 		bootstage_error(BOOTSTAGE_ID_FIT_CHECK_ARCH);
 		return 0;
 	}
@@ -878,7 +878,7 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 	switch (genimg_get_format((void *)img_addr)) {
 	case IMAGE_FORMAT_LEGACY:
 #ifndef CONFIG_IPQ_FIRMWARE
-		printf("## Booting kernel from Legacy Image at %08lx ...\n",
+		printf("## Booting kernel from legacy image at %08lx ...\n",
 				img_addr);
 #endif
 		hdr = image_get_kernel(img_addr, images->verify);
@@ -904,7 +904,7 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 			*os_len = image_get_data_size(hdr);
 			break;
 		default:
-			printf("Wrong Image Type for %s command\n",
+			printf("Wrong image type for %s command\n",
 				cmdtp->name);
 			bootstage_error(BOOTSTAGE_ID_CHECK_IMAGETYPE);
 			return NULL;
@@ -926,7 +926,7 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 #if defined(CONFIG_FIT)
 	case IMAGE_FORMAT_FIT:
 		fit_hdr = (void *)img_addr;
-		printf("## Booting kernel from FIT Image at %08lx ...\n",
+		printf("## Booting kernel from FIT image at %08lx ...\n",
 				img_addr);
 
 		if (!fit_check_format(fit_hdr)) {
@@ -997,7 +997,7 @@ static void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 		break;
 #endif
 	default:
-		printf("Wrong Image Format for %s command\n", cmdtp->name);
+		printf("Wrong image format for %s command\n", cmdtp->name);
 		bootstage_error(BOOTSTAGE_ID_FIT_KERNEL_INFO);
 		return NULL;
 	}
@@ -1101,26 +1101,26 @@ static int image_info(ulong addr)
 {
 	void *hdr = (void *)addr;
 
-	printf("\n## Checking Image at %08lx ...\n", addr);
+	printf("\n## Checking image at %08lx ...\n", addr);
 
 	switch (genimg_get_format(hdr)) {
 	case IMAGE_FORMAT_LEGACY:
 		puts("   Legacy image found\n");
 		if (!image_check_magic(hdr)) {
-			puts("   Bad Magic Number\n");
+			puts("   Bad magic number\n");
 			return 1;
 		}
 
 		if (!image_check_hcrc(hdr)) {
-			puts("   Bad Header Checksum\n");
+			puts("   Bad header checksum\n");
 			return 1;
 		}
 
 		image_print_contents(hdr);
 
-		puts("   Verifying Checksum ... ");
+		puts("   Verifying checksum ... ");
 		if (!image_check_dcrc(hdr)) {
-			puts("   Bad Data CRC\n");
+			puts("   Bad data CRC\n");
 			return 1;
 		}
 		puts("OK\n");
@@ -1188,12 +1188,12 @@ int do_imls(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 				if (!image_check_hcrc(hdr))
 					goto next_sector;
 
-				printf("Legacy Image at %08lX:\n", (ulong)hdr);
+				printf("Legacy image at %08lX:\n", (ulong)hdr);
 				image_print_contents(hdr);
 
-				puts("   Verifying Checksum ... ");
+				puts("   Verifying checksum ... ");
 				if (!image_check_dcrc(hdr)) {
-					puts("Bad Data CRC\n");
+					puts("Bad data CRC\n");
 				} else {
 					puts("OK\n");
 				}
@@ -1203,7 +1203,7 @@ int do_imls(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 				if (!fit_check_format(hdr))
 					goto next_sector;
 
-				printf("FIT Image at %08lX:\n", (ulong)hdr);
+				printf("FIT image at %08lX:\n", (ulong)hdr);
 				fit_print_contents(hdr);
 				break;
 #endif
@@ -1223,8 +1223,8 @@ U_BOOT_CMD(
 	imls,	1,		1,	do_imls,
 	"list all images found in flash",
 	"\n"
-	"    - Prints information about all images found at sector\n"
-	"      boundaries in flash."
+	"    - print information about all images found at sector\n"
+	"      boundaries in flash"
 );
 #endif
 
